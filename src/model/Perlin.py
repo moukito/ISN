@@ -3,7 +3,9 @@ import numpy as np
 import math
 
 class Perlin:
-    def __init__(self, seed = 1, octave = 1, persistence = 1.0, lacunarity = 1.0, scale = 1.0, amplitude = 1.0, chunk_size = 64):
+    __slots__ = ["seed", "octave", "persistence", "lacunarity", "scale", "amplitude", "chunk_size", "chunks", "gradients", "x_offset", "y_offset"]
+
+    def __init__(self, seed = 1, octave = 1, persistence = 1.0, lacunarity = 1.0, scale = 1.0, amplitude = 1.0, chunk_size = 64) -> None:
         self.seed = seed
         self.octave = octave
         self.persistence = persistence
@@ -13,12 +15,18 @@ class Perlin:
         self.chunk_size = chunk_size
         self.chunks = {}
         self.gradients = []
+        self.permutation = []
 
         self.x_offset = random.randrange(-100, 100)
         self.y_offset = random.randrange(-100, 100)
         
         self.generate_permutation_table()
         self.generate_gradients()
+        
+    def generate_permutation_table(self):
+        permutation = list(range(256))
+        random.shuffle(permutation)
+        self.permutation = permutation * 2
 
     def generate_gradients(self):
         for _ in range(256):
@@ -41,16 +49,16 @@ class Perlin:
         v = self.fade(yf)
 
         # Hash coordinates of the 4 corners
-        aa = self.perm[X] + Y
-        ab = self.perm[X] + Y + 1
-        ba = self.perm[X + 1] + Y
-        bb = self.perm[X + 1] + Y + 1
+        aa = self.permutation[X] + Y
+        ab = self.permutation[X] + Y + 1
+        ba = self.permutation[X + 1] + Y
+        bb = self.permutation[X + 1] + Y + 1
 
         # Gradient vectors
-        g_aa = self.gradients[self.perm[aa] % 256]
-        g_ab = self.gradients[self.perm[ab] % 256]
-        g_ba = self.gradients[self.perm[ba] % 256]
-        g_bb = self.gradients[self.perm[bb] % 256]
+        g_aa = self.gradients[self.permutation[aa] % 256]
+        g_ab = self.gradients[self.permutation[ab] % 256]
+        g_ba = self.gradients[self.permutation[ba] % 256]
+        g_bb = self.gradients[self.permutation[bb] % 256]
 
         # Dot products
         n_aa = self.dot_product(g_aa, xf, yf)
@@ -67,24 +75,12 @@ class Perlin:
     def dot_product(self, grad, x, y):
         return grad[0] * x + grad[1] * y
 
-    def generate_permutation_table(self):
-        permutation = list(range(256))
-        random.shuffle(permutation)
-        print(permutation)
-        self.perm = permutation * 2
-
     def generate_chunk(self, x, y):
         chunk = np.zeros((self.chunk_size, self.chunk_size), dtype=float)
 
         # Set min / max
-        max_noise_height = np.finfo(np.float32).max
-        min_noise_height = np.finfo(np.float32).min
-
-        max_possible_height = 0
-        amplitude = 1.0
-        for _ in range(self.octave):
-            max_possible_height += amplitude
-            amplitude *= self.persistence
+        max_noise_height = np.finfo(np.float32).min
+        min_noise_height = np.finfo(np.float32).max
 
         for xi in range(self.chunk_size):
             for yi in range(self.chunk_size):
@@ -92,11 +88,11 @@ class Perlin:
                 freq = 1
                 noise_height = 0
 
-                for i in range(self.octave):
+                for _ in range(self.octave):
                     px = (self.chunk_size * x + xi + self.x_offset) / self.scale * freq + self.x_offset
                     py = (self.chunk_size * y + yi + self.y_offset) / self.scale * freq + self.y_offset
 
-                    perlin_value = self.noise(px, py) * 2 - 1
+                    perlin_value = self.noise(px, py)
                     noise_height += perlin_value * amplitude
 
                     # Increase amp and freq
@@ -111,13 +107,7 @@ class Perlin:
 
                 chunk[xi, yi] = noise_height
 
-        # Normalize
-        for xi in range(self.chunk_size):
-            for yi in range(self.chunk_size):
-                normalized_height = (chunk[xi, yi] + 1) / (2 * max_possible_height / 1.75)
-                chunk[xi, yi] = max(min(-normalized_height, np.iinfo(np.int32).max), 0)
-
-        self.chunks[(x, y)] = chunk
+        self.chunks[(x, y)] = (chunk, min_noise_height, max_noise_height)
     
     def get_chunk(self, x, y):
         if self.chunks.get((x, y)) == None:
