@@ -3,20 +3,22 @@ import numpy as np
 import math
 
 class Perlin:
-    __slots__ = ["seed", "octave", "persistence", "lacunarity", "scale", "amplitude", "chunk_size", "chunks", "gradients", "x_offset", "y_offset"]
+    __slots__ = ["seed", "octave", "persistence", "lacunarity", "scale", "amplitude", "chunks", "gradients", "permutation", "x_offset", "y_offset"]
 
-    def __init__(self, seed = 1, octave = 1, persistence = 1.0, lacunarity = 1.0, scale = 1.0, amplitude = 1.0, chunk_size = 64) -> None:
+    CHUNK_SIZE = 32
+
+    def __init__(self, seed = 1, octave = 1, persistence = 1.0, lacunarity = 1.0, scale = 1.0, amplitude = 1.0) -> None:
         self.seed = seed
         self.octave = octave
         self.persistence = persistence
         self.lacunarity = lacunarity
         self.scale = scale
         self.amplitude = amplitude
-        self.chunk_size = chunk_size
         self.chunks = {}
         self.gradients = []
         self.permutation = []
 
+        random.seed(seed)
         self.x_offset = random.randrange(-100, 100)
         self.y_offset = random.randrange(-100, 100)
         
@@ -33,7 +35,7 @@ class Perlin:
             self.gradients.append((random.uniform(-1, 1), random.uniform(-1, 1)))
 
     def fade(self, t):
-        return 6 * t ** 5 - 15 * t ** 4 + 10 * t ** 3
+        return 6 * t ** 5 - 15 * t ** 4 + 10 * t ** 3 # t*t*t*(t*(t*6 - 15) + 10)
 
     def lerp(self, a, b, t):
         return a + t * (b - a)
@@ -76,21 +78,21 @@ class Perlin:
         return grad[0] * x + grad[1] * y
 
     def generate_chunk(self, x, y):
-        chunk = np.zeros((self.chunk_size, self.chunk_size), dtype=float)
+        chunk = np.empty((self.CHUNK_SIZE, self.CHUNK_SIZE), dtype=float)
 
         # Set min / max
         max_noise_height = np.finfo(np.float32).min
         min_noise_height = np.finfo(np.float32).max
 
-        for xi in range(self.chunk_size):
-            for yi in range(self.chunk_size):
+        for xi in range(self.CHUNK_SIZE):
+            for yi in range(self.CHUNK_SIZE):
                 amplitude = self.amplitude
                 freq = 1
                 noise_height = 0
 
                 for _ in range(self.octave):
-                    px = (self.chunk_size * x + xi + self.x_offset) / self.scale * freq + self.x_offset
-                    py = (self.chunk_size * y + yi + self.y_offset) / self.scale * freq + self.y_offset
+                    px = (self.CHUNK_SIZE * x + xi + self.x_offset) / self.scale * freq + self.x_offset
+                    py = (self.CHUNK_SIZE * y + yi + self.y_offset) / self.scale * freq + self.y_offset
 
                     perlin_value = self.noise(px, py)
                     noise_height += perlin_value * amplitude
@@ -114,3 +116,9 @@ class Perlin:
             self.generate_chunk(x, y)
 
         return self.chunks[(x, y)]
+    
+    def get_chunk_data(self, x, y):
+        if self.chunks.get((x, y)) == None:
+            self.generate_chunk(x, y)
+
+        return self.chunks[(x, y)][0]
