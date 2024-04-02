@@ -10,14 +10,24 @@ class Scene:
     def run(self):
         self.running = True
         while self.running:
-            self.handle_events()
-            self.update()
-            self.render()
+            self.decorator_handle_events()
+            self.decorator_update()
+            self.decorator_render()
 
-    def handle_events(self):
+    def decorator_handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                self.running = False
+            self.handle_events()
+
+    def decorator_update(self):
+        pass
+
+    def decorator_render(self):
+        pass
+
+    def handle_events(self):
+        pass
 
     def update(self):
         pass
