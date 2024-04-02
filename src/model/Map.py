@@ -1,9 +1,10 @@
 from enum import Enum
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from Perlin import Perlin
+
 
 class Biomes(Enum):
     LAVA = 1
