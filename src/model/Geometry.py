@@ -19,6 +19,12 @@ class Point:
         self.x -= other.x
         self.y -= other.y
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+    
+    def __hash__(self):
+        return hash((self.x, self.y))
+
     def opposite(self):
         self.x = -self.x
         self.y = -self.y
@@ -27,6 +33,9 @@ class Point:
         tmp = self.x
         self.x = self.y
         self.y = tmp
+
+    def origin():
+        return Point(0, 0)
 
 class Rect:
     __slots__ = ["x1", "y1", "x2", "y2"]
