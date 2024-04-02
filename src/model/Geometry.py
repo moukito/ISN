@@ -19,6 +19,15 @@ class Point:
         self.x -= other.x
         self.y -= other.y
 
+    def opposite(self):
+        self.x = -self.x
+        self.y = -self.y
+
+    def invert(self):
+        tmp = self.x
+        self.x = self.y
+        self.y = tmp
+
 class Rect:
     __slots__ = ["x1", "y1", "x2", "y2"]
 

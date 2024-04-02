@@ -37,8 +37,7 @@ class Map:
         self.y_chunk = y
 
     def try_generate_ore(self, x_chunk, y_chunk, x, y, treshold, search_area_size, search_ores, ores_count_treshold, ore_type):
-        r = random.random()
-        if r < treshold:
+        if random.random() < treshold:
             ores_count = 0
             values = [0]
             for i in range(1, search_area_size // 2 + 1):
@@ -93,6 +92,7 @@ class Map:
                 processed_chunk = self.process_chunk(chunk[0], chunk[1], chunk[2], actual_chunk_x, actual_chunk_y)
                 self.map_chunks[actual_chunk_x, actual_chunk_y] = processed_chunk
 
+            # Temporary
             complete_chunk = self.map_chunks[(actual_chunk_x, actual_chunk_y)]
             if self.ores.get((actual_chunk_x, actual_chunk_y)) != None:
                 for type, coords in self.ores[(actual_chunk_x, actual_chunk_y)].items():
