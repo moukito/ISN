@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import pygame
 
@@ -17,7 +18,6 @@ class GameCore:
         self.screen.set_caption(title, icon)
 
         self.setup_parameter()
-        self.run()
 
     def __del__(self):
         pygame.quit()
@@ -26,16 +26,26 @@ class GameCore:
         if not os.path.isfile("config.json"):
             with open("config.json", "w") as configFile:
                 json.dump(self.default_config(), configFile)
+
         with open("config.json", "r") as configFile:
             dico = json.load(configFile)
+            if dico.get("version") != self.game_version():
+                self.update_parameter()
+
         if dico["fullscreen"]:
             self.screen.set_mode((dico["width"], dico["height"]), pygame.FULLSCREEN)
         else:
             self.screen.set_mode((dico["width"], dico["height"]))
 
     def default_config(self) -> dict:
-        return dict(fullscreen=True, width=self.screen.get_desktop_sizes()[0][0],
+        return dict(version="1.0.0", fullscreen=True, width=self.screen.get_desktop_sizes()[0][0],
                     height=self.screen.get_desktop_sizes()[0][1])
+
+    def game_version(self):
+        return "1.0.0"
+
+    def update_parameter(self):
+        pass
 
     def run(self):
         self.title_screen.run()
