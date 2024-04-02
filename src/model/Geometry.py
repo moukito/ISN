@@ -28,6 +28,9 @@ class Point:
         self.x = self.y
         self.y = tmp
 
+    def origin():
+        return Point(0, 0)
+
 class Rect:
     __slots__ = ["x1", "y1", "x2", "y2"]
 
