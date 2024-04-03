@@ -63,3 +63,26 @@ class Ore(Structure):
     def __init__(self, type, coords, orientation = Orientation.RANDOM) -> None:
         super().__init__(coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
         self.type = type
+
+
+class BuildingType(Enum):
+    BASE_CAMP = 1
+    FARM = 2
+
+# TODO: maybe create a class 'TypedStructure' inheriting of 'Structure' to add the type attribute instead of adding it to every subclass of Structure?
+class Building(Structure):
+    __slots__ = ["type", "costs"]
+
+    def __init__(self, costs, type, coords, points, orientation=Orientation.RANDOM) -> None:
+        super().__init__(coords, points, orientation)
+        self.type = type
+        self.costs = costs
+
+class BaseCamp(Building):
+    def __init__(self, coords, orientation=Orientation.RANDOM) -> None:
+        # TODO: add costs when the ressource system is ready
+        super().__init__(None, BuildingType.BASE_CAMP, coords,
+                         [Point(-1, -1), Point(0, -1), Point(1, -1),
+                          Point(-1, 0),  Point(0, 0),  Point(1, 0), 
+                          Point(-1, 1),  Point(0, 1),  Point(1, 1)], orientation)
+        
