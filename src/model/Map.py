@@ -1,12 +1,13 @@
 from enum import Enum
 import random
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from Perlin import Perlin
 from Structures import StructureType, Ore, OreType 
 from Geometry import Point
+
 
 class Biomes(Enum):
     LAVA = 1
