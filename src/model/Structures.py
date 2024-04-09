@@ -5,6 +5,7 @@ from Geometry import Point, Rectangle
 
 class StructureType(Enum):
     ORE = 1
+    BUILDING = 2
 
 class Orientation(Enum):
     RANDOM = 0
@@ -58,12 +59,14 @@ class OreType(Enum):
     CRYSTAL = 5    
 
 class Ore(Structure):
-    __slots__ = ["type"] 
+    __slots__ = ["type", "health"]
+
+    typeToHealth = {OreType.IRON : 500, OreType.COPPER : 400, OreType.GOLD : 250, OreType.VULCAN : 100, OreType.CRYSTAL : 150} 
 
     def __init__(self, type, coords, orientation = Orientation.RANDOM) -> None:
         super().__init__(coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
         self.type = type
-
+        self.health = self.typeToHealth[type]
 
 class BuildingType(Enum):
     BASE_CAMP = 1
@@ -93,14 +96,15 @@ class Building(Structure):
 
     def update(self, duration):
         # Should be called BEFORE adding or removing workers
-        old_time = self.building_time
-        self.building_time += duration * self.workers
+        if self.state != BuildingState.BUILT:
+            old_time = self.building_time
+            self.building_time += duration * self.workers
 
-        if self.building_time != 0 and old_time == 0:
-            self.state = BuildingState.BUILDING
+            if self.building_time != 0 and old_time == 0:
+                self.state = BuildingState.BUILDING
 
-        if self.building_duration < self.building_time:
-            self.state = BuildingState.BUILT
+            if self.building_duration < self.building_time:
+                self.state = BuildingState.BUILT
 
         return self.state
 
