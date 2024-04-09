@@ -40,6 +40,9 @@ class Perlin:
     def lerp(self, a, b, t):
         return a + t * (b - a)
 
+    def dot_product(self, grad, x, y):
+        return grad[0] * x + grad[1] * y
+
     def noise(self, x, y):
         X = math.floor(x) & 255
         Y = math.floor(y) & 255
@@ -74,15 +77,12 @@ class Perlin:
 
         return self.lerp(x1, x2, v)
 
-    def dot_product(self, grad, x, y):
-        return grad[0] * x + grad[1] * y
-
     def generate_chunk(self, x, y):
         chunk = np.empty((self.CHUNK_SIZE, self.CHUNK_SIZE), dtype=float)
 
         # Set min / max
-        max_noise_height = np.finfo(np.float32).min
-        min_noise_height = np.finfo(np.float32).max
+        max_noise_height = -math.inf
+        min_noise_height = +math.inf
 
         for xi in range(self.CHUNK_SIZE):
             for yi in range(self.CHUNK_SIZE):

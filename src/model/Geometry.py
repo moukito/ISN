@@ -37,7 +37,7 @@ class Point:
     def origin():
         return Point(0, 0)
 
-class Rect:
+class Rectangle:
     __slots__ = ["x1", "y1", "x2", "y2"]
 
     def __init__(self, x1, y1, x2, y2) -> None:
@@ -45,7 +45,7 @@ class Rect:
 
     @classmethod
     def fromPoints(p1, p2):
-        return Rect(p1.x, p1.y, p2.x, p2.y)
+        return Rectangle(p1.x, p1.y, p2.x, p2.y)
     
     
     def containsPoint(self, point):
@@ -58,6 +58,13 @@ class Rect:
 
     def overlap(self, other):
         return self.containsCoords(other.x1, other.y1) or self.containsCoords(other.x2, other.y2)
+    
+    def toPointList(self):
+        points = []
+        for y in range(self.y1, self.y2 + 1):
+            for x in range(self.y1, self.y2 + 1):
+                points.append(Point(x, y))
+        return points
     
 class Polygon:
     __slots__ = ["points"]
