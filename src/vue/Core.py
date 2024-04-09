@@ -15,7 +15,8 @@ class Core:
         self.screen = pygame.display
         self.title_screen = GameTitle()
 
-        self.screen.set_caption("Exodus", "../../asset/icons/exodus.png")
+        self.screen.set_caption("Exodus", "exodus icon")
+        self.screen.set_icon(pygame.image.load("assets/icons/exodus.png"))
 
         self.setup_parameter()
 
