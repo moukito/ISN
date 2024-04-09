@@ -24,7 +24,7 @@ class Cell():
 
 def est_valide(plan, i, j) -> bool:
 	"""
-	Véifier si les coordonées sont bien dans le plan
+	Véifier si les coordonnées sont bien dans le plan
 	:param
 		- plan: une liste 2D des cellules (forme carrée), list
 		- i: indice i, int
