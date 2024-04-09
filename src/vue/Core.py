@@ -1,10 +1,9 @@
 import json
 import os
-import sys
 
 import pygame
 
-from vue.GameTitle import GameTitle
+from src.vue.GameTitle import GameTitle
 
 
 class Core:
