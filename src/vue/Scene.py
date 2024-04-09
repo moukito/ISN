@@ -1,7 +1,7 @@
 import pygame
+from abc import ABC, abstractmethod
 
-
-class Scene:
+class Scene(ABC):
     __slots__ = ["running"]
 
     def __init__(self):
@@ -26,11 +26,14 @@ class Scene:
     def decorator_render(self):
         pass
 
+    @abstractmethod
     def handle_events(self):
         pass
 
+    @abstractmethod
     def update(self):
         pass
 
+    @abstractmethod
     def render(self):
         pass
