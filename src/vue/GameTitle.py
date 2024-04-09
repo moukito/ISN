@@ -1,4 +1,4 @@
-from Scene import Scene
+from vue.Scene import Scene
 
 
 class GameTitle(Scene):

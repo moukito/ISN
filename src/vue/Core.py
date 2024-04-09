@@ -4,18 +4,18 @@ import sys
 
 import pygame
 
-from src.scene.GameTitle import GameTitle
+from vue.GameTitle import GameTitle
 
 
-class GameCore:
+class Core:
     __slots__ = ["screen", "title_screen"]
 
-    def __init__(self, title: str, icon: str):
+    def __init__(self):
         pygame.init()
         self.screen = pygame.display
         self.title_screen = GameTitle()
 
-        self.screen.set_caption(title, icon)
+        self.screen.set_caption("Exodus", "../../asset/icons/exodus.png")
 
         self.setup_parameter()
 
