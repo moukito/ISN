@@ -2,6 +2,7 @@ from enum import Enum
 import random
 
 from Geometry import Point, Rectangle
+from Player import Player
 
 class StructureType(Enum):
     ORE = 1
