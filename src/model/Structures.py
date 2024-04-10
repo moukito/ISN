@@ -17,9 +17,10 @@ class Orientation(Enum):
     WEST = 4
 
 class Structure:
-    __slots__ = ["coords", "points", "orientation"]
+    __slots__ = ["structure_type", "coords", "points", "orientation"]
 
-    def __init__(self, coords, points, orientation = Orientation.RANDOM) -> None:
+    def __init__(self, structure_type, coords, points, orientation = Orientation.RANDOM) -> None:
+        self.structure_type = structure_type
         self.coords = coords
         self.points = points
         self.set_orientation(orientation)
@@ -66,7 +67,7 @@ class Ore(Structure):
     typeToHealth = {OreType.IRON: 500, OreType.COPPER: 400, OreType.GOLD: 250, OreType.VULCAN: 100, OreType.CRYSTAL: 150} 
 
     def __init__(self, type, coords, orientation = Orientation.RANDOM) -> None:
-        super().__init__(coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
+        super().__init__(StructureType.ORE, coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
         self.type = type
         self.health = self.typeToHealth[type]
 
@@ -84,7 +85,7 @@ class Building(Structure):
     __slots__ = ["type", "costs", "health", "building_duration", "building_time", "workers", "state", "player"]
 
     def __init__(self, costs, health, building_duration, type, coords, points, player, orientation=Orientation.RANDOM) -> None:
-        super().__init__(coords, points, orientation)
+        super().__init__(StructureType.BUILDING, coords, points, orientation)
         self.costs = costs
         self.health = health
         self.building_duration = building_duration
@@ -123,6 +124,5 @@ class Farm(Building):
         super().__init__(None, 2 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
 
     def update(self, duration):
-        super().update(duration)
-        if self.state == BuildingState.BUILT:
+        if super().update(duration) == BuildingState.BUILT:
             self.player.add_ressource(RessourceType.FOOD, duration * 0.1)
