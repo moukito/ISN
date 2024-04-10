@@ -24,6 +24,9 @@ class Core:
     __slots__ = ["screen", "title_screen"]
 
     def __init__(self):
+        """
+            Initializes the Core instance.
+        """
         pygame.init()
         self.screen = None
         self.title_screen = None
@@ -40,6 +43,9 @@ class Core:
         pygame.quit()
 
     def setup_parameter(self):
+        """
+            Sets up the game parameters based on configuration.
+        """
         if not os.path.isfile("config.json"):
             with open("config.json", "w") as configFile:
                 json.dump(self.default_config(), configFile)
@@ -55,14 +61,26 @@ class Core:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
 
     def default_config(self) -> dict:
+        """
+            Returns default configuration parameters.
+        """
         return dict(version="1.0.0", fullscreen=True, width=pygame.display.get_desktop_sizes()[0][0],
                     height=pygame.display.get_desktop_sizes()[0][1])
 
     def game_version(self) -> str:
+        """
+            Returns the version of the game.
+        """
         return "1.0.0"
 
     def update_parameter(self):
+        """
+            Updates the game parameters if necessary.
+        """
         pass
 
     def run(self):
+        """
+            Starts the game execution.
+        """
         self.title_screen = GameTitle(self.screen)

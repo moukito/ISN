@@ -21,10 +21,19 @@ class Scene(ABC):
     __slots__ = ["running", "screen"]
 
     def __init__(self, screen: pygame.Surface):
+        """
+            Initializes the Scene instance with the screen.
+
+            Parameters:
+                screen (pygame.Surface): The surface to render the scene on.
+        """
         self.running = False
         self.screen = screen
 
     def run(self):
+        """
+            Runs the scene loop.
+        """
         self.running = True
         while self.running:
             self.decorator_handle_events()
@@ -32,15 +41,24 @@ class Scene(ABC):
             self.decorator_render()
 
     def decorator_handle_events(self):
+        """
+            Decorator method for handling events.
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             self.handle_events()
 
     def decorator_update(self):
+        """
+            Decorator method for updating the scene.
+        """
         self.update()
 
     def decorator_render(self):
+        """
+            Decorator method for rendering the scene.
+        """
         self.screen.fill((255, 255, 255))
 
         self.render()
@@ -49,12 +67,24 @@ class Scene(ABC):
 
     @abstractmethod
     def handle_events(self):
+        """
+            Abstract method for handling events.
+            To be implemented in subclasses.
+        """
         pass
 
     @abstractmethod
     def update(self):
+        """
+            Abstract method for updating the scene.
+            To be implemented in subclasses.
+        """
         pass
 
     @abstractmethod
     def render(self):
+        """
+            Abstract method for rendering the scene.
+            To be implemented in subclasses.
+        """
         pass
