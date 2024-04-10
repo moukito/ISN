@@ -1,5 +1,8 @@
 import os
 import sys
+import platform
+
+SYSTEM = platform.system()
 
 from vue.Core import Core
 
@@ -12,10 +15,17 @@ def exodus():
 
 def verifying_path():
     path = sys.argv[0]
-    keyword = path.split("/")
-    path = path[:-(len(keyword[-1]) + len(keyword[-2]) + 2)]
-    if path != os.getcwd():
-        os.chdir(path)
+    if SYSTEM == "Linux" or SYSTEM == "Darwin":
+        keyword = path.split("/")
+        path = path[:-(len(keyword[-1]) + len(keyword[-2]) + 2)]
+        if path != os.getcwd():
+            os.chdir(path)
+    elif SYSTEM == "Windows":
+        keyword = path.split("\\")
+        path = path[:-(len(keyword[-1]) + len(keyword[-2]) + 2)]
+        print(path)
+        if path != os.getcwd():
+            os.chdir(path)
 
 
 if __name__ == "__main__":
