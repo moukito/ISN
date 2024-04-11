@@ -32,7 +32,7 @@ class Core:
         self.title_screen = None
 
         pygame.display.set_caption("Exodus", "exodus icon")
-        pygame.display.set_icon(pygame.image.load("assets/icons/exodus.png"))
+        pygame.display.set_icon(pygame.image.load("asset/icon/exodus.png"))
 
         self.setup_parameter()
 

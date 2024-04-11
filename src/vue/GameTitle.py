@@ -25,9 +25,15 @@ class GameTitle(Scene):
                 screen (pygame.Surface): The surface to render the title screen on.
         """
         super().__init__(screen)
-        self.bg = pygame.image.load("assets/background.jpg")
+        self.bg = pygame.image.load("asset/background.jpg")
+        pygame.mixer.music.load("asset/music/titleSceren.mp3")
+        pygame.mixer.music.set_volume(0.1)
+        pygame.mixer.music.play()
 
         self.run()
+
+    def __del__(self):
+        pygame.mixer.music.stop()
 
     def handle_events(self):
         """
