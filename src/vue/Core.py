@@ -3,7 +3,8 @@ import os
 
 import pygame
 
-from src.vue.GameTitle import GameTitle
+from GameTitle import GameTitle
+from GameVue import GameVue
 
 
 class Core:
@@ -13,6 +14,7 @@ class Core:
         pygame.init()
         self.screen = pygame.display
         self.title_screen = GameTitle()
+        self.game_screen = GameVue()
 
         self.screen.set_caption("Exodus", "exodus icon")
         self.screen.set_icon(pygame.image.load("assets/icons/exodus.png"))
@@ -48,4 +50,4 @@ class Core:
         pass
 
     def run(self):
-        self.title_screen.run()
+        self.game_screen.run()

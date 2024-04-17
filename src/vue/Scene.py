@@ -1,4 +1,5 @@
 import pygame
+import threading
 from abc import ABC, abstractmethod
 
 class Scene(ABC):
@@ -9,8 +10,10 @@ class Scene(ABC):
 
     def run(self):
         self.running = True
+
+        threading.Thread(target=self.event_loop)
+
         while self.running:
-            self.decorator_handle_events()
             self.decorator_update()
             self.decorator_render()
 
@@ -18,7 +21,8 @@ class Scene(ABC):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            self.handle_events()
+            self.handle_events(event)
+        pygame.event.clear()
 
     def decorator_update(self):
         pass
@@ -26,8 +30,12 @@ class Scene(ABC):
     def decorator_render(self):
         pass
 
+    def event_loop(self):
+        while self.running:
+            self.decorator_handle_events()
+
     @abstractmethod
-    def handle_events(self):
+    def handle_events(self, event):
         pass
 
     @abstractmethod
