@@ -18,13 +18,14 @@ class Biomes(Enum):
     SNOW = 6
 
 class Map:
-    __slots__ = ["perlin", "map_chunks", "ores", "structures", "occupied_coords", "chunk_coords"]
+    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "structures", "occupied_coords", "chunk_coords"]
 
     def __init__(self, seed = 1) -> None:
         self.perlin = Perlin(seed, 4, 2, 1, 200, 1)
         #self.perlin = Perlin(seed, 4, 2, 2, 100, 1)
         self.map_chunks = {}
         self.ores = {} # {Point (chunk coords): {OreType: Point}} TODO : Maybe change to {Point (chunk coords): {OreType: Ore}}
+        self.buildings = []
         self.structures = {} # {Point (chunk coords): [Structure]}
         self.occupied_coords = {} # {Point: Structure}
 
@@ -120,8 +121,15 @@ class Map:
         can_place = self.try_place_structure(structure)
         if can_place:
             center = structure.coords
-            self.structures[center // Perlin.CHUNK_SIZE] = structure
             for relative_point in structure.points:
                 self.occupied_coords[center + relative_point] = structure
+                
+            self.structures[center // Perlin.CHUNK_SIZE] = structure
+            if structure.structure_type == StructureType.BUILDING:
+                self.buildings.append(structure)
 
         return can_place
+    
+    def update(self, duration):
+        for building in self.buildings:
+            building.update(duration)

@@ -52,7 +52,6 @@ class Structure:
         old_orientation = self.orientation
         self.set_orientation(orientation)
         self.rotate((old_orientation - self.orientation) % 4)
-            
 
 class OreType(Enum):
     IRON = 1
@@ -115,14 +114,18 @@ class Building(Structure):
 class BaseCamp(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         # TODO: add costs when the ressource system is ready
-        super().__init__(None, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, orientation)
+        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, orientation)
         
 class Farm(Building):
     __slots__ = ["food"]
+
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         # TODO: add costs when the ressource system is ready
-        super().__init__(None, 2 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+        super().__init__(None, 300, 2 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
 
     def update(self, duration):
-        if super().update(duration) == BuildingState.BUILT:
+        state = super().update(duration)
+        if state == BuildingState.BUILT:
             self.player.add_ressource(RessourceType.FOOD, duration * 0.1)
+        
+        return state
