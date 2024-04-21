@@ -261,4 +261,4 @@ def creer_plan(grid, dim) -> list:
 # 	print(a_star(plan, src, dest))
 
 # if __name__ == "__main__":
-	main()
+#	main()

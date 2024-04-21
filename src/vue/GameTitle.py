@@ -1,6 +1,6 @@
 import pygame
 
-from src.vue.Scene import Scene
+from vue.Scene import Scene
 
 
 class GameTitle(Scene):
@@ -26,8 +26,6 @@ class GameTitle(Scene):
         """
         super().__init__(screen)
         self.bg = pygame.image.load("assets/background.jpg")
-
-        self.run()
 
     def handle_events(self):
         """
