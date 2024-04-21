@@ -37,9 +37,11 @@ class Scene(ABC):
         """
         self.running = True
 
-        threading.Thread(target=self.event_loop)
+        #event = threading.Thread(target=self.event_loop)
+        #event.start()
 
         while self.running:
+            self.decorator_handle_events()
             self.decorator_update()
             self.decorator_render()
 
@@ -67,11 +69,17 @@ class Scene(ABC):
 
         self.render()
 
-        pygame.display.flip()
+        #pygame.display.flip()
 
     def event_loop(self):
         while self.running:
-            self.decorator_handle_events()
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+                self.handle_events(event)
+            if len(events) > 0:
+                pygame.event.clear()
 
     @abstractmethod
     def handle_events(self, event):

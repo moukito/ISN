@@ -3,8 +3,8 @@ import os
 
 import pygame
 
-from GameTitle import GameTitle
-from GameVue import GameVue
+from vue.GameTitle import GameTitle
+from vue.GameVue import GameVue
 
 
 class Core:
@@ -22,16 +22,13 @@ class Core:
             run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen"]
+    __slots__ = ["screen", "title_screen", "game_screen"]
 
     def __init__(self):
         """
             Initializes the Core instance.
         """
         pygame.init()
-        self.screen = pygame.display
-        self.title_screen = GameTitle()
-        self.game_screen = GameVue()
 
         pygame.display.set_caption("Exodus", "exodus icon")
         pygame.display.set_icon(pygame.image.load("assets/icons/exodus.png"))
@@ -86,4 +83,5 @@ class Core:
             Starts the game execution.
         """
         self.title_screen = GameTitle(self.screen)
+        self.game_screen  = GameVue(self.screen)
         self.game_screen.run()

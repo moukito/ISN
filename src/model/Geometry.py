@@ -52,6 +52,9 @@ class Point:
     
     def __hash__(self):
         return hash((self.x, self.y))
+    
+    def __str__(self):
+        return f"Point({self.x}, {self.y})"
 
     def opposite(self):
         self.x = -self.x

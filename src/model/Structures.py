@@ -1,9 +1,9 @@
 from enum import Enum
 import random
 
-from Geometry import Point, Rectangle
-from Ressource import RessourceType
-from Player import Player
+from model.Geometry import Point, Rectangle
+from model.Ressource import RessourceType
+from model.Player import Player
 
 class StructureType(Enum):
     ORE = 1
