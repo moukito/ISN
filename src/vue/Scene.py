@@ -47,7 +47,7 @@ class Scene(ABC):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            self.handle_events()
+            self.handle_events(event)
 
     def decorator_update(self):
         """
@@ -66,7 +66,7 @@ class Scene(ABC):
         pygame.display.flip()
 
     @abstractmethod
-    def handle_events(self):
+    def handle_events(self, event):
         """
             Abstract method for handling events.
             To be implemented in subclasses.

@@ -15,6 +15,7 @@ def exodus():
     verifying_path()
     game = Core()
     game.run()
+    sys.exit(0)
 
 
 def verifying_path():
@@ -34,7 +35,6 @@ def verifying_path():
     elif SYSTEM == "Windows":
         keyword = path.split("\\")
         path = path[:-(len(keyword[-1]) + len(keyword[-2]) + 2)]
-        print(path)
         if path != os.getcwd():
             os.chdir(path)
 

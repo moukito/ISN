@@ -1,5 +1,6 @@
 import pygame
 
+from src.vue.Choix import Choix
 from src.vue.Scene import Scene
 
 
@@ -15,7 +16,7 @@ class GameTitle(Scene):
             render(): Renders the title screen.
     """
 
-    __slots__ = ["bg"]
+    __slots__ = ["bg", "choix"]
 
     def __init__(self, screen: pygame.Surface):
         """
@@ -25,21 +26,38 @@ class GameTitle(Scene):
                 screen (pygame.Surface): The surface to render the title screen on.
         """
         super().__init__(screen)
-        self.bg = pygame.image.load("asset/background.jpg")
-        pygame.mixer.music.load("asset/music/titleSceren.mp3")
+        self.bg = pygame.transform.smoothscale(pygame.image.load("asset/background.jpg"),
+                                               (self.screen.get_width(), self.screen.get_height()))
+        pygame.mixer.music.load("asset/music/titleScreen.mp3")
         pygame.mixer.music.set_volume(0.1)
         pygame.mixer.music.play()
+
+        self.choix = Choix()
 
         self.run()
 
     def __del__(self):
         pygame.mixer.music.stop()
 
-    def handle_events(self):
+    def handle_events(self, event: pygame.event.Event):
         """
             Handles events specific to the title screen.
         """
-        pass
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                pygame.event.post(pygame.event.Event(pygame.QUIT))
+            elif event.key == pygame.K_UP:
+                self.choix -= 1
+            elif event.key == pygame.K_DOWN:
+                self.choix += 1
+            elif event.key == pygame.K_RETURN:
+                choix = self.choix.get_choix()
+                if choix == 1:
+                    pass
+                elif choix == 2:
+                    pass
+                elif choix == 3:
+                    pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def update(self):
         """
