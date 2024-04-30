@@ -34,7 +34,7 @@ class GameVue(Scene):
 
         self.reset_building()
         
-        self.cell_pixel_size = 15
+        self.cell_pixel_size = 30
         self.screen_width, self.screen_height = self.screen.get_width(), self.screen.get_height()
         self.cell_width_count = ceil(self.screen_width / self.cell_pixel_size)
         self.cell_height_count = ceil(self.screen_height / self.cell_pixel_size)
@@ -90,7 +90,9 @@ class GameVue(Scene):
                 if self.building == None:
                     self.clicking = False
                 else:
-                    if self.map.place_structure(self.building):
+                    result = self.map.place_structure(self.building)
+                    print(result)
+                    if result:
                         self.reset_building()
         elif event.type == pygame.MOUSEMOTION:
             pos  = pygame.mouse.get_pos()

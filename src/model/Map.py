@@ -112,7 +112,7 @@ class Map:
         center = structure.coords
         i = 0
         l = len(structure.points)
-        while not self.occupied_coords(center + structure.points[i], None) != None and i < l:
+        while i < l and self.occupied_coords.get(center + structure.points[i], None) == None:
             i += 1
             
         return i == l
