@@ -1,5 +1,7 @@
 import json
 import os
+import pickle
+import subprocess
 
 import pygame
 
@@ -46,38 +48,57 @@ class Core:
         """
             Sets up the game parameters based on configuration.
         """
-        if not os.path.isfile("config.json"):
-            with open("config.json", "w") as configFile:
-                json.dump(self.default_config(), configFile)
+        if not os.path.isfile("config"):
+            self.default_config()
 
-        with open("config.json", "r") as configFile:
-            dico = json.load(configFile)
-            if dico.get("version") != self.game_version():
-                self.update_parameter()
+        dico = self.read_config()
+
+        if dico.get("version") != self.game_version():
+            self.update_parameter(dico)
+            dico = self.read_config()
 
         if dico["fullscreen"]:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]), pygame.FULLSCREEN)
         else:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
 
-    def default_config(self) -> dict:
+    @staticmethod
+    def read_config():
+        with open("config", "rb") as configFile:
+            dico = pickle.load(configFile)
+        return dico
+
+    def default_config(self):
         """
             Returns default configuration parameters.
         """
-        return dict(version="1.0.0", fullscreen=True, width=pygame.display.get_desktop_sizes()[0][0],
-                    height=pygame.display.get_desktop_sizes()[0][1])
+        with open("config", "wb") as configFile:
+            pickle.dump(
+                dict(version=self.game_version(), fullscreen=True, width=pygame.display.get_desktop_sizes()[0][0],
+                     height=pygame.display.get_desktop_sizes()[0][1]), configFile)
 
-    def game_version(self) -> str:
+    @staticmethod
+    def game_version() -> str:
         """
             Returns the version of the game.
         """
-        return "1.0.0"
+        patch = subprocess.run(['git', 'rev-list', '--all', '--count'], capture_output=True).stdout.decode(
+            'utf-8').strip()
+        return "0.0." + str(patch)
 
-    def update_parameter(self):
+    def update_parameter(self, dico):
         """
             Updates the game parameters if necessary.
         """
-        pass
+        self.default_config()
+
+        default_dico = self.read_config()
+
+        with open("config", "wb") as configFile:
+            for key in default_dico.keys():
+                if key != "version":
+                    default_dico[key] = dico[key]
+            pickle.dump(default_dico, configFile)
 
     def run(self):
         """
