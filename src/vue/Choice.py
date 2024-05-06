@@ -36,6 +36,7 @@ class Choice:
         """
         self.choice += de
         self.check()
+        return self
 
     def __sub__(self, de):
         """
@@ -46,6 +47,7 @@ class Choice:
         """
         self.choice -= de
         self.check()
+        return self
 
     def check(self):
         """
@@ -54,11 +56,11 @@ class Choice:
         If the current choice is greater than the maximum choice, it's adjusted to be within the range by subtracting 3.
         """
         while self.choice < 1:
-            self.choice += 3
+            self.choice += self.max_choice
         while self.choice > self.max_choice:
-            self.choice -= 3
+            self.choice -= self.max_choice
 
-    def get_choix(self):
+    def get_choice(self):
         """
         Returns the current choice.
 

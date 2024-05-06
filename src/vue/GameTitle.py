@@ -1,7 +1,8 @@
 import pygame
 
-from src.vue.Choix import Choix
+from src.vue.Choice import Choice
 from src.vue.Scene import Scene
+from src.vue.SettingScene import SettingsScene
 
 
 class GameTitle(Scene):
@@ -16,7 +17,7 @@ class GameTitle(Scene):
             render(): Renders the title screen.
     """
 
-    __slots__ = ["bg", "choix"]
+    __slots__ = ["bg", "choice"]
 
     def __init__(self, screen: pygame.Surface):
         """
@@ -32,7 +33,7 @@ class GameTitle(Scene):
         pygame.mixer.music.set_volume(0.1)
         pygame.mixer.music.play()
 
-        self.choix = Choix()
+        self.choice = Choice()
 
         self.run()
 
@@ -47,16 +48,17 @@ class GameTitle(Scene):
             if event.key == pygame.K_ESCAPE:
                 pygame.event.post(pygame.event.Event(pygame.QUIT))
             elif event.key == pygame.K_UP:
-                self.choix -= 1
+                self.choice -= 1
             elif event.key == pygame.K_DOWN:
-                self.choix += 1
+                self.choice += 1
             elif event.key == pygame.K_RETURN:
-                choix = self.choix.get_choix()
-                if choix == 1:
+                choice = self.choice.get_choice()
+                if choice == 1:
                     pass
-                elif choix == 2:
-                    pass
-                elif choix == 3:
+                elif choice == 2:
+                    settings_scene = SettingsScene(self.screen)  # Create and run the settings scene
+                    settings_scene.run()
+                elif choice == 3:
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
 
     def update(self):
