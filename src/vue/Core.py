@@ -23,20 +23,17 @@ class Core:
             run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen"]
+    __slots__ = ["screen", "title_screen", "parameter"]
 
     def __init__(self):
         """
             Initializes the Core instance.
         """
-        pygame.init()
         self.screen = None
         self.title_screen = None
+        self.parameter = None
 
-        pygame.display.set_caption("Exodus", "exodus icon")
-        pygame.display.set_icon(pygame.image.load("asset/icon/exodus.png"))
-
-        self.setup_parameter()
+        pygame.init()
 
     def __del__(self):
         """
@@ -44,10 +41,20 @@ class Core:
         """
         pygame.quit()
 
+    @staticmethod
+    def window_setup():
+        """
+            Initializes the pygame module.
+        """
+        pygame.display.set_caption("Exodus", "exodus icon")
+        pygame.display.set_icon(pygame.image.load("asset/icon/exodus.png"))
+
     def setup_parameter(self):
         """
             Sets up the game parameters based on configuration.
         """
+        self.window_setup()
+
         if not os.path.isfile("config"):
             self.default_config()
 
@@ -62,6 +69,8 @@ class Core:
         else:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
 
+        self.parameter = dico
+
     @staticmethod
     def read_config():
         with open("config", "rb") as configFile:
@@ -75,7 +84,7 @@ class Core:
         with open("config", "wb") as configFile:
             pickle.dump(
                 dict(version=self.game_version(), fullscreen=True, width=pygame.display.get_desktop_sizes()[0][0],
-                     height=pygame.display.get_desktop_sizes()[0][1]), configFile)
+                     height=pygame.display.get_desktop_sizes()[0][1], volume=0.1), configFile)
 
     @staticmethod
     def game_version() -> str:
@@ -104,4 +113,4 @@ class Core:
         """
             Starts the game execution.
         """
-        self.title_screen = GameTitle(self.screen)
+        self.title_screen = GameTitle(self)

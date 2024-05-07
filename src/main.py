@@ -4,7 +4,7 @@ import platform
 
 SYSTEM = platform.system()
 
-from vue.Core import Core
+from src.vue.Core import Core
 
 
 def exodus():
@@ -14,6 +14,7 @@ def exodus():
     """
     verifying_path()
     game = Core()
+    game.setup_parameter()
     game.run()
     sys.exit(0)
 
