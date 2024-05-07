@@ -18,7 +18,7 @@ class Scene(ABC):
             render(): Abstract method for rendering the scene.
     """
 
-    __slots__ = ["running", "screen", "parameter"]
+    __slots__ = ["running", "screen", "parameter", "core"]
 
     def __init__(self, core):
         """
@@ -28,6 +28,7 @@ class Scene(ABC):
                 screen (pygame.Surface): The surface to render the scene on.
         """
         self.running = False
+        self.core = core
         self.screen = core.screen
         self.parameter = core.parameter
 
@@ -60,7 +61,7 @@ class Scene(ABC):
         """
             Decorator method for rendering the scene.
         """
-        self.screen.fill((255, 255, 255))
+        self.screen.fill((0, 0, 0))
 
         self.render()
 
