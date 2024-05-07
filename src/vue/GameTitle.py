@@ -63,30 +63,15 @@ class GameTitle(Scene):
             elif event.key == pygame.K_DOWN:
                 self.choice += 1
             elif event.key == pygame.K_RETURN:
-                choice = self.choice.get_choice()
-                if choice == 1:
-                    pass
-                elif choice == 2:
-                    settings_scene = SettingsScene(self.core)  # Create and run the settings scene
-                    settings_scene.run()
-                elif choice == 3:
-                    pygame.event.post(pygame.event.Event(pygame.QUIT))
+                self.choice_handler(self.choice.get_choice())
         elif event.type == pygame.MOUSEBUTTONDOWN:
             for i, button in enumerate(self.buttons):
                 if button.is_clicked(event):
-                    if i == 0:
-                        pass
-                    elif i == 1:
-                        settings_scene = SettingsScene(self.core)  # Create and run the settings scene
-                        settings_scene.run()
-                    elif i == 2:
-                        pygame.event.post(pygame.event.Event(pygame.QUIT))
+                    self.choice_handler(i + 1)
         elif event.type == pygame.MOUSEMOTION:
             for i, button in enumerate(self.buttons):
                 if button.is_hovered(event):
                     self.choice.set_choice(i + 1)
-
-    # TODO : merge button actions
 
     def update(self):
         """
@@ -118,18 +103,31 @@ class GameTitle(Scene):
             button.render(self.screen)  # Render the button object onto the screen
 
             # Calculate the position of the text
-            text_width, text_height = button.get_size()  # Get the size of the text object
-            x = (self.screen.get_width() - text_width) // 2  # Calculate the horizontal position (centered)
+            button_width, button_height = button.get_size()  # Get the size of the text object
+            x = (self.screen.get_width() - button_width) // 2  # Calculate the horizontal position (centered)
             y = int(self.screen.get_height() * 0.65) + i * (
                         self.screen.get_height() * 0.1)  # Calculate the vertical position (80% from the top plus an offset)
 
             # Draw a triangle around the current choice
             if choice == i + 1:
-                offset = text_height / 2
+                offset = button_height / 2
+
                 x -= 20
                 points = [(x - offset, y + offset * 2), (x - offset, y), (x, y + offset)]
                 pygame.draw.polygon(self.screen, button.color, points)
-                x += 40 + text_width
+
+                x += 40 + button_width
                 points = [(x + offset, y + offset * 2), (x + offset, y), (x, y + offset)]
                 pygame.draw.polygon(self.screen, button.color, points)
-                # TODO : rewrite correctly this part
+
+    def choice_handler(self, choice):
+        """
+            Handles the choice of the player.
+        """
+        if choice == 1:
+            pass
+        elif choice == 2:
+            settings_scene = SettingsScene(self.core)  # Create and run the settings scene
+            settings_scene.run()
+        elif choice == 3:
+            pygame.event.post(pygame.event.Event(pygame.QUIT))
