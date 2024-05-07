@@ -68,3 +68,6 @@ class Choice:
             int: The current choice.
         """
         return self.choice
+
+    def set_choice(self, de):
+        self.choice = de
