@@ -39,8 +39,6 @@ class Core:
         """
         Close the game and exit pygame.
         """
-        if self.parameter is not None:
-            self.update_parameter(self.parameter)
         pygame.quit()
 
     @staticmethod
@@ -70,7 +68,6 @@ class Core:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]), pygame.FULLSCREEN)
         else:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
-
         self.parameter = dico
 
     @staticmethod
@@ -85,8 +82,8 @@ class Core:
         """
         with open("config", "wb") as configFile:
             pickle.dump(
-                dict(version=self.game_version(), fullscreen=True, width=pygame.display.get_desktop_sizes()[0][0],
-                     height=pygame.display.get_desktop_sizes()[0][1], volume=0.1), configFile)
+                dict(version=self.game_version(), fullscreen=True, width=2560,
+                     height=1600, volume=0.1), configFile)
 
     @staticmethod
     def game_version() -> str:
