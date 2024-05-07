@@ -39,6 +39,8 @@ class Core:
         """
         Close the game and exit pygame.
         """
+        if self.parameter is not None:
+            self.update_parameter(self.parameter)
         pygame.quit()
 
     @staticmethod
@@ -104,7 +106,7 @@ class Core:
         default_dico = self.read_config()
 
         with open("config", "wb") as configFile:
-            for key in default_dico.keys():
+            for key in dico.keys():
                 if key != "version":
                     default_dico[key] = dico[key]
             pickle.dump(default_dico, configFile)
@@ -114,3 +116,4 @@ class Core:
             Starts the game execution.
         """
         self.title_screen = GameTitle(self)
+        del self.title_screen

@@ -19,18 +19,18 @@ class GameTitle(Scene):
 
     __slots__ = ["bg", "choice", "options", "font"]
 
-    def __init__(self, screen: pygame.Surface):
+    def __init__(self, core):
         """
             Initializes the GameTitle instance with the screen.
 
             Parameters:
                 screen (pygame.Surface): The surface to render the title screen on.
         """
-        super().__init__(screen)
+        super().__init__(core)
         self.bg = pygame.transform.smoothscale(pygame.image.load("asset/background.jpg"),
                                                (self.screen.get_width(), self.screen.get_height()))
         pygame.mixer.music.load("asset/music/titleScreen.mp3")
-        pygame.mixer.music.set_volume(0.1)
+        pygame.mixer.music.set_volume(self.parameter["volume"])
         pygame.mixer.music.play()
 
         self.choice = Choice()
@@ -59,7 +59,7 @@ class GameTitle(Scene):
                 if choice == 1:
                     pass
                 elif choice == 2:
-                    settings_scene = SettingsScene(self.screen)  # Create and run the settings scene
+                    settings_scene = SettingsScene(self)  # Create and run the settings scene
                     settings_scene.run()
                 elif choice == 3:
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
