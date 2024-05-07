@@ -2,8 +2,12 @@ import pygame
 
 from src.vue.Button import Button
 from src.vue.Scene import Scene
+from src.vue.Select import Select
+from src.vue.Slider import Slider
 
 
+# TODO : adjust the select and slider class to the new structure
+# TODO : make pygame a global import
 class SettingsScene(Scene):
     """
         Represents the settings screen of the game.
@@ -30,6 +34,10 @@ class SettingsScene(Scene):
         self.volume = pygame.mixer.music.get_volume()
         self.resolution = (self.screen.get_width(), self.screen.get_height())
 
+        self.volume_slider = Slider(20, 100, 200, 20, 0.0, 1.0, self.volume)
+        self.resolution_menu = Select(20, 200, 200, 50,
+                                      [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)])
+
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
         font_size = int(self.screen.get_height() * 0.065)
@@ -45,14 +53,7 @@ class SettingsScene(Scene):
         """
             Handles events specific to the settings screen.
         """
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.increase_volume()
-            elif event.key == pygame.K_DOWN:
-                self.decrease_volume()
-            elif event.key == pygame.K_r:
-                self.change_resolution()
-        elif self.apply_button.is_clicked(event):
+        if self.apply_button.is_clicked(event):
             # Apply the settings
             pygame.mixer.music.set_volume(self.volume)
             pygame.display.set_mode(self.resolution)
@@ -73,46 +74,31 @@ class SettingsScene(Scene):
                     self.change_button_color(button, True)
                 else:
                     self.change_button_color(button, False)
-#TODO : create a special event for button
+        self.volume_slider.handle_event(event)
+        self.resolution_menu.handle_event(event)
 
     def update(self):
         """
             Updates the settings screen.
         """
-        pass
+        self.volume = self.volume_slider.get_value()
+        self.resolution = self.resolution_menu.get_value()
 
     def render(self):
         """
             Renders the settings screen.
         """
         volume_text = pygame.font.Font(None, 36).render(f"Volume: {self.volume}", 1, (255, 255, 255))
+        self.volume_slider.render(self.screen)
+
         resolution_text = pygame.font.Font(None, 36).render(f"Resolution: {self.resolution}", 1, (255, 255, 255))
+        self.resolution_menu.render(self.screen)
+
         self.screen.blit(volume_text, (20, 20))
         self.screen.blit(resolution_text, (20, 60))
 
         self.apply_button.render(self.screen)
         self.cancel_button.render(self.screen)
-
-    def increase_volume(self):
-        """
-            Increases the game volume.
-        """
-        self.volume = min(1.0, self.volume + 0.1)
-
-    def decrease_volume(self):
-        """
-            Decreases the game volume.
-        """
-        self.volume = max(0.0, self.volume - 0.1)
-
-    def change_resolution(self):
-        """
-            Changes the game resolution.
-        """
-        if self.resolution == (800, 600):
-            self.resolution = (1024, 768)
-        else:
-            self.resolution = (800, 600)
 
     @staticmethod
     def change_button_color(button, hovered):
