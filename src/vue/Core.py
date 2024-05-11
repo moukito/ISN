@@ -113,4 +113,6 @@ class Core:
             Starts the game execution.
         """
         self.title_screen = GameTitle(self)
+        self.title_screen.setup()
+        self.title_screen.run()
         del self.title_screen

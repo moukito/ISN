@@ -54,9 +54,6 @@ class SettingsScene(Scene):
         """
         if self.apply_button.is_clicked(event):
             # Apply the settings
-            pygame.mixer.music.set_volume(self.volume)
-            pygame.display.set_mode(self.resolution)
-
             self.parameter["volume"] = self.volume
             self.parameter["width"] = self.resolution[0]
             self.parameter["height"] = self.resolution[1]
@@ -66,7 +63,6 @@ class SettingsScene(Scene):
             pygame.event.post(pygame.event.Event(pygame.QUIT))
         elif self.cancel_button.is_clicked(event):
             # Cancel the settings
-            pygame.mixer.music.set_volume(self.volume)
             pygame.event.post(pygame.event.Event(pygame.QUIT))
         elif event.type == pygame.MOUSEMOTION:
             for button in [self.apply_button, self.cancel_button]:
@@ -83,6 +79,7 @@ class SettingsScene(Scene):
         """
         self.volume = self.volume_slider.get_value()
         pygame.mixer.music.set_volume(self.volume)
+
         self.resolution = self.resolution_menu.get_value()
 
     def render(self):

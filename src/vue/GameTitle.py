@@ -28,16 +28,24 @@ class GameTitle(Scene):
                 screen (pygame.Surface): The surface to render the title screen on.
         """
         super().__init__(core)
-        self.bg = pygame.transform.smoothscale(pygame.image.load("asset/background.jpg"),
-                                               (self.screen.get_width(), self.screen.get_height()))
+
+        self.bg = None
+        self.buttons = None
+
         pygame.mixer.music.load("asset/music/titleScreen.mp3")
         pygame.mixer.music.set_volume(self.parameter["volume"])
         pygame.mixer.music.play()
 
         self.choice = Choice()
         self.options = ["jouer", "option", "quitter"]
-        font_size = int(self.screen.get_height() * 0.065)
 
+    def setup(self):
+        pygame.mixer.music.set_volume(self.parameter["volume"])
+
+        self.bg = pygame.transform.smoothscale(pygame.image.load("asset/icon/background.jpg"),
+                                               (self.screen.get_width(), self.screen.get_height()))
+
+        font_size = int(self.screen.get_height() * 0.065)
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
         self.buttons = [Button(option, (self.screen.get_width() - button_width) // 2,
@@ -45,8 +53,6 @@ class GameTitle(Scene):
                                button_width, button_height,
                                (255, 255, 255), "asset/font/Space-Laser-BF65f80ab15c082.otf", font_size) for i, option
                         in enumerate(self.options)]
-
-        self.run()
 
     def __del__(self):
         pygame.mixer.music.stop()
@@ -129,5 +135,6 @@ class GameTitle(Scene):
         elif choice == 2:
             settings_scene = SettingsScene(self.core)  # Create and run the settings scene
             settings_scene.run()
+            self.setup()
         elif choice == 3:
             pygame.event.post(pygame.event.Event(pygame.QUIT))
