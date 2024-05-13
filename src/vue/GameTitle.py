@@ -40,6 +40,8 @@ class GameTitle(Scene):
         self.options = ["jouer", "option", "quitter"]
 
     def setup(self):
+        self.core.update_screen()
+
         pygame.mixer.music.set_volume(self.parameter["volume"])
 
         self.bg = pygame.transform.smoothscale(pygame.image.load("asset/icon/background.jpg"),
@@ -133,7 +135,7 @@ class GameTitle(Scene):
         if choice == 1:
             pass
         elif choice == 2:
-            settings_scene = SettingsScene(self.core)  # Create and run the settings scene
+            settings_scene = SettingsScene(self.core, self.render)  # Create and run the settings scene
             settings_scene.run()
             self.setup()
         elif choice == 3:

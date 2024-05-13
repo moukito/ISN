@@ -22,7 +22,7 @@ class SettingsScene(Scene):
             change_resolution(): Changes the game resolution.
     """
 
-    def __init__(self, core):
+    def __init__(self, core, parent_render):
         """
             Initializes the SettingsScene instance with the screen.
 
@@ -30,12 +30,17 @@ class SettingsScene(Scene):
                 core (pygame.Surface): The surface to render the settings screen on.
         """
         super().__init__(core)
+        self.parent_render = parent_render
+        self.opacity = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        self.opacity.set_alpha(128)
+
         self.volume = pygame.mixer.music.get_volume()
         self.resolution = (self.screen.get_width(), self.screen.get_height())
 
         self.volume_slider = Slider(20, 100, 200, 20, 0.0, 1.0, self.volume)
         self.resolution_menu = Select(20, 200, 200, 50,
-                                      [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)])
+                                      [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)],
+                                      self.resolution)
 
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
@@ -86,6 +91,9 @@ class SettingsScene(Scene):
         """
             Renders the settings screen.
         """
+        self.parent_render()
+        self.screen.blit(self.opacity, (0, 0))
+
         volume_text = pygame.font.Font(None, 36).render(f"Volume: {self.volume}", 1, (255, 255, 255))
         self.volume_slider.render(self.screen)
 

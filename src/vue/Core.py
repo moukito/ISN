@@ -64,11 +64,15 @@ class Core:
             self.update_parameter(dico)
             dico = self.read_config()
 
-        if dico["fullscreen"]:
-            self.screen = pygame.display.set_mode((dico["width"], dico["height"]), pygame.FULLSCREEN)
-        else:
-            self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
         self.parameter = dico
+        self.update_screen()
+
+    def update_screen(self):
+        if self.parameter["fullscreen"]:
+            flags = pygame.FULLSCREEN | pygame.SCALED
+        else:
+            flags = pygame.SCALED
+        self.screen = pygame.display.set_mode((self.parameter["width"], self.parameter["height"]), flags)
 
     @staticmethod
     def read_config():
