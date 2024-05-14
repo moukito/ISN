@@ -24,12 +24,13 @@ class Core:
             run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen", "parameter"]
+    __slots__ = ["screen", "title_screen", "parameter", "game_screen"]
 
     def __init__(self):
         """
             Initializes the Core instance.
         """
+        self.game_screen = None
         self.screen = None
         self.title_screen = None
         self.parameter = None
@@ -121,5 +122,5 @@ class Core:
         self.title_screen.setup()
         self.title_screen.run()
         del self.title_screen
-        self.game_screen  = GameVue(self.screen)
+        self.game_screen = GameVue(self)
         self.game_screen.run()
