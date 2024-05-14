@@ -74,9 +74,12 @@ class Rectangle:
     def __init__(self, x1, y1, x2, y2) -> None:
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
 
-    @classmethod
+    @staticmethod
     def fromPoints(p1, p2):
         return Rectangle(p1.x, p1.y, p2.x, p2.y)
+    
+    def __str__(self):
+        return f"Rectangle({self.x1}, {self.y1}, {self.x2}, {self.y2})"
     
     
     def containsPoint(self, point):

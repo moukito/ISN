@@ -89,7 +89,7 @@ class Building(Structure):
         self.health = health
         self.building_duration = building_duration
         self.building_time = 0
-        self.workers = 0
+        self.workers = 1 # TODO : change to 0 when the robot system is ready
         self.type = type
         self.player = player
         self.state = BuildingState.PLACED
