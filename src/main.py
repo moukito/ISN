@@ -22,7 +22,7 @@ def exodus():
 def verifying_path():
     """
         Verifies the current path and adjusts the working directory if necessary based on the platform.
-
+xvg()
         This function checks the current path to determine if it matches the directory containing the running script.
         If the current path does not match, it adjusts the working directory to match the script's directory.
         The adjustment is based on the platform: Linux and macOS use forward slashes ("/"), while Windows uses backslashes ("\").
