@@ -4,7 +4,7 @@ import platform
 
 SYSTEM = platform.system()
 
-from vue.Core import Core
+from src.vue.Core import Core
 
 
 def exodus():
@@ -14,7 +14,9 @@ def exodus():
     """
     verifying_path()
     game = Core()
+    game.setup_parameter()
     game.run()
+    sys.exit(0)
 
 
 def verifying_path():
@@ -34,7 +36,6 @@ def verifying_path():
     elif SYSTEM == "Windows":
         keyword = path.split("\\")
         path = path[:-(len(keyword[-1]) + len(keyword[-2]) + 2)]
-        print(path)
         if path != os.getcwd():
             os.chdir(path)
 
