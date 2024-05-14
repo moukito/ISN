@@ -11,6 +11,18 @@ class Point:
     def __sub__(self, other):
         return Point(self.x - other.x, self.y - other.y)
 
+    def __mul__(self, scalar):
+        return Point(self.x * scalar, self.y * scalar)
+    
+    def __div__(self, scalar):
+        return Point(self.x / scalar, self.y / scalar)
+    
+    def __floordiv__(self, scalar):
+        return Point(self.x // scalar, self.y // scalar)
+    
+    def __mod__(self, scalar):
+        return Point(self.x % scalar, self.y % scalar)
+
     def __radd__(self, other):
         self.x += other.x
         self.y += other.y
@@ -19,11 +31,30 @@ class Point:
         self.x -= other.x
         self.y -= other.y
 
+    def __rmul__(self, scalar):
+        self.x *= scalar
+        self.y *= scalar
+    
+    def __rdiv__(self, scalar):
+        self.x /= scalar
+        self.y /= scalar
+    
+    def __rfloordiv__(self, scalar):
+        self.x //= scalar
+        self.y //= scalar
+    
+    def __rmod__(self, scalar):
+        self.x %= scalar
+        self.y %= scalar
+
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
     
     def __hash__(self):
         return hash((self.x, self.y))
+    
+    def __str__(self):
+        return f"Point({self.x}, {self.y})"
 
     def opposite(self):
         self.x = -self.x

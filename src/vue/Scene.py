@@ -1,4 +1,5 @@
 import pygame
+import threading
 from abc import ABC, abstractmethod
 
 
@@ -37,6 +38,10 @@ class Scene(ABC):
             Runs the scene loop.
         """
         self.running = True
+
+        #event = threading.Thread(target=self.event_loop)
+        #event.start()
+
         while self.running:
             self.decorator_handle_events()
             self.decorator_update()
@@ -65,7 +70,17 @@ class Scene(ABC):
 
         self.render()
 
-        pygame.display.flip()
+        #pygame.display.flip()
+
+    def event_loop(self):
+        while self.running:
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+                self.handle_events(event)
+            if len(events) > 0:
+                pygame.event.clear()
 
     @abstractmethod
     def handle_events(self, event):
