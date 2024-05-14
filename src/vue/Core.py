@@ -5,7 +5,8 @@ import subprocess
 
 import pygame
 
-from src.vue.GameTitle import GameTitle
+from vue.GameTitle import GameTitle
+from vue.GameVue import GameVue
 
 
 class Core:
@@ -114,3 +115,5 @@ class Core:
         """
         self.title_screen = GameTitle(self)
         del self.title_screen
+        self.game_screen  = GameVue(self.screen)
+        self.game_screen.run()
