@@ -18,16 +18,18 @@ class Biomes(Enum):
     SNOW = 6
 
 class Map:
-    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "structures", "occupied_coords", "chunk_coords"]
+    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "structures", "occupied_coords", "chunk_occupied_coords"]
 
     def __init__(self, seed = 1) -> None:
-        self.perlin = Perlin(seed, 4, 2, 1, 200, 1)
+        self.perlin = Perlin(seed, 4, 2, 1, 50, 1)
         #self.perlin = Perlin(seed, 4, 2, 2, 100, 1)
         self.map_chunks = {}
         self.ores = {} # {Point (chunk coords): {OreType: Point}} TODO : Maybe change to {Point (chunk coords): {OreType: Ore}}
         self.buildings = []
+        self.building_type = {} # {StructureType: Structure}
         self.structures = {} # {Point (chunk coords): [Structure]}
         self.occupied_coords = {} # {Point: Structure}
+        self.chunk_occupied_coords = {} # {Point (chunk coords): [Point]}
 
     def try_generate_ore(self, chunk_coords, position, treshold, search_area_size, search_ores, ores_count_treshold, ore_type):
         if random.random() < treshold:
@@ -122,14 +124,25 @@ class Map:
         if can_place:
             center = structure.coords
             for relative_point in structure.points:
-                self.occupied_coords[center + relative_point] = structure
+                absolute_point = center + relative_point
+                self.occupied_coords[absolute_point] = structure
+                chunk_coords = absolute_point // Perlin.CHUNK_SIZE
+                if self.chunk_occupied_coords.get(chunk_coords, None) == None:
+                    self.chunk_occupied_coords[chunk_coords] = []
+                self.chunk_occupied_coords[chunk_coords].append(absolute_point)
                 
-            self.structures[center // Perlin.CHUNK_SIZE] = structure
+            if self.structures.get(center // Perlin.CHUNK_SIZE, None) == None:
+                self.structures[center // Perlin.CHUNK_SIZE] = []
+            self.structures[center // Perlin.CHUNK_SIZE].append(structure)
             if structure.structure_type == StructureType.BUILDING:
                 self.buildings.append(structure)
+                type = structure.type
+                if self.building_type.get(type, None) == None:
+                    self.building_type[type] = []
+                self.building_type[type].append(structure)
 
         return can_place
     
     def update(self, duration):
         for building in self.buildings:
-            building.update(duration)
+           building.update(duration)

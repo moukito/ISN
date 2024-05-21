@@ -3,22 +3,25 @@ from time import time, time_ns
 
 import pygame
 
-from src.vue.Scene import Scene
+from vue.Scene import Scene
 
-from src.model.Tools import Colors
-from src.model.Map import Map
-from src.model.Geometry import Point
-from src.model.Perlin import Perlin
-from src.model.Player import Player
-from src.model.Ressource import RessourceType
-from src.model.Structures import BaseCamp, Farm
+from model.Tools import Colors
+from model.Map import Map, Biomes
+from model.Geometry import Point, Rectangle
+from model.Perlin import Perlin
+from model.Player import Player
+from model.Ressource import RessourceType
+from model.Structures import StructureType, Structure, BaseCamp, Farm 
+from model.Saver import Saver
 
 
 class GameVue(Scene):
-    __slots__ = ["player", "map", "actual_chunks", "buildings", "camera_pos", "clicking", "camera_moved", "start_click_pos", "mouse_pos", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "colors", "clock", "last_timestamp"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "camera_pos", "clicking", "camera_moved", "start_click_pos", "mouse_pos", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp"]
 
     def __init__(self, screen: pygame.Surface):
         super().__init__(screen)
+
+        self.saver = Saver()
 
         self.player = Player()
 
@@ -59,6 +62,10 @@ class GameVue(Scene):
             self.ressource_icons[ressource_type] = pygame.transform.scale(pygame.image.load("assets/icons/" + ressource_type.name.lower() + ".png").convert_alpha(), (26, 26))
         #print(self.ressource_icons.keys())
 
+        self.biomes_textures = {}
+        for biome in Biomes:
+            self.biomes_textures[biome] = pygame.transform.scale(pygame.image.load("assets/icons/" + biome.name.lower() + ".jpg").convert_alpha(), (self.cell_pixel_size, self.cell_pixel_size))
+
         self.ressource_background = pygame.transform.scale(pygame.image.load("assets/ui.png").convert_alpha(), (312, 202))
         self.ressource_background_size = (self.ressource_background.get_width(), self.ressource_background.get_height())
         #self.ressource_background = pygame.image.load("assets/ui.png").convert_alpha()
@@ -76,7 +83,6 @@ class GameVue(Scene):
         }
 
     def handle_events(self, event):
-        #print(event)
         if event.type == pygame.MOUSEBUTTONDOWN:
             pressed_mouse_buttons = pygame.mouse.get_pressed()
             if pressed_mouse_buttons[0]:
@@ -90,8 +96,8 @@ class GameVue(Scene):
                 if self.building == None:
                     self.clicking = False
                 else:
+                    self.building.coords = (self.building_pos + Point(int(self.camera_pos.x), int(self.camera_pos.y)) - Point(self.screen_width, self.screen_height) // 2) // self.cell_pixel_size
                     result = self.map.place_structure(self.building)
-                    print(result)
                     if result:
                         self.reset_building()
         elif event.type == pygame.MOUSEMOTION:
@@ -118,6 +124,8 @@ class GameVue(Scene):
                 else:
                     self.reset_building()
                     self.building_moved = True
+            if event.key == pygame.K_s:
+                self.saver.save_map(self.map)
 
     def update(self):
         timestamp = time_ns()
@@ -134,7 +142,6 @@ class GameVue(Scene):
                 self.camera_moved = False
             else:
                 # TODO: maybe optimize by removing the render of the entire map?
-                self.render_building()
                 self.building_moved = False
             
             self.render_interface()
@@ -145,22 +152,43 @@ class GameVue(Scene):
 
     def render_map(self):
         camera_pos = Point(int(self.camera_pos.x), int(self.camera_pos.y))
-        
-        offset = camera_pos % self.cell_pixel_size
-        cell_pos = camera_pos // self.cell_pixel_size
+        camera_cell = camera_pos // self.cell_pixel_size
+        camera_offset = camera_pos % self.cell_pixel_size
+        camera_chunk = camera_cell // Perlin.CHUNK_SIZE
+        camera_chunk_cell = camera_cell % Perlin.CHUNK_SIZE
 
-        #print(cell_pos // Perlin.CHUNK_SIZE, ceil(self.cell_width_count / Perlin.CHUNK_SIZE) + 1, ceil(self.cell_height_count / Perlin.CHUNK_SIZE) + 1)
-        chunks = self.map.get_area_around_chunk((cell_pos) // Perlin.CHUNK_SIZE - Point(self.cell_width_count, self.cell_height_count) // Perlin.CHUNK_SIZE, ceil(self.cell_width_count / Perlin.CHUNK_SIZE) + 1, ceil(self.cell_height_count / Perlin.CHUNK_SIZE) + 1)
+        screen_center = Point(self.screen_width // 2, self.screen_height // 2)
+        chunk_tl = screen_center - camera_chunk_cell * self.cell_pixel_size
+        chunk_br = chunk_tl + Point(Perlin.CHUNK_SIZE * self.cell_pixel_size, Perlin.CHUNK_SIZE * self.cell_pixel_size) - camera_offset
+
+        margin_tl = Point(max(0, chunk_tl.x), max(0, chunk_tl.y))
+        margin_br = Point(max(0, self.screen_width - chunk_br.x), max(0, self.screen_height - chunk_br.y))
+        cells_tl = Point(ceil(margin_tl.x / self.cell_pixel_size), ceil(margin_tl.y / self.cell_pixel_size))
+        cells_br = Point(ceil(margin_br.x / self.cell_pixel_size), ceil(margin_br.y / self.cell_pixel_size))
+        chunks_tl = Point(ceil(cells_tl.x / Perlin.CHUNK_SIZE), ceil(cells_tl.y / Perlin.CHUNK_SIZE))
+        chunks_br = Point(ceil(cells_br.x / Perlin.CHUNK_SIZE), ceil(cells_br.y / Perlin.CHUNK_SIZE))
+
+        cells_tl_signed = Point(chunk_tl.x / self.cell_pixel_size, chunk_tl.y / self.cell_pixel_size)
+        cells_br_signed = Point((self.screen_width - chunk_br.x) / self.cell_pixel_size, (self.screen_height - chunk_br.y) / self.cell_pixel_size)
+        cells_size = Point(ceil(cells_tl_signed.x + cells_br_signed.x) + Perlin.CHUNK_SIZE, ceil(cells_tl_signed.y + cells_br_signed.y) + Perlin.CHUNK_SIZE)
+        chunks_size = chunks_br + chunks_tl
+
+        ceiled_cells_tl = Point(ceil(cells_tl_signed.x), ceil(cells_tl_signed.y))
+        cell_offset = Point(-ceiled_cells_tl.x if ceiled_cells_tl.x <= 0 else Perlin.CHUNK_SIZE - ceiled_cells_tl.x, -ceiled_cells_tl.y if ceiled_cells_tl.y <= 0 else Perlin.CHUNK_SIZE - ceiled_cells_tl.y)
+
+        tl_chunk = camera_chunk - chunks_tl
+        chunks = self.map.get_area_around_chunk(camera_chunk - chunks_tl, chunks_size.x + 1, chunks_size.y + 1)
         self.actual_chunks = chunks
-        
-        # TODO: optimize
-        colors = list(self.colors.values())
-        for i in range(0, chunks.shape[0]):
-            for j in range(0, chunks.shape[1]):
-                #pygame.draw.rect(self.screen, colors[int(chunks[i][j])] if (i % Perlin.CHUNK_SIZE and j % Perlin.CHUNK_SIZE) else pygame.Color(pygame.color.THECOLORS["black"]), ((i - (chunks.shape[0] - self.cell_width_count) // 2 - cell_pos.x % Perlin.CHUNK_SIZE) * self.cell_pixel_size - offset.x, (j - (chunks.shape[1] - self.cell_height_count) // 2 - cell_pos.y % Perlin.CHUNK_SIZE) * self.cell_pixel_size - offset.y, self.cell_pixel_size, self.cell_pixel_size))
-                pygame.draw.rect(self.screen, colors[int(chunks[i][j]) + 2], ((i - (chunks.shape[0] - self.cell_width_count) // 2 - cell_pos.x % Perlin.CHUNK_SIZE) * self.cell_pixel_size - offset.x, (j - (chunks.shape[1] - self.cell_height_count) // 2 - cell_pos.y % Perlin.CHUNK_SIZE) * self.cell_pixel_size - offset.y, self.cell_pixel_size, self.cell_pixel_size))
-    
-    def render_building(self):
+
+        # RENDER MAP
+        for i in range(0, cells_size.x):
+            for j in range(0, cells_size.y):
+                x = i + cell_offset.x
+                y = j + cell_offset.y
+                self.screen.blit(self.biomes_textures[Biomes(int(chunks[x][y]))], (i * self.cell_pixel_size - camera_offset.x, j * self.cell_pixel_size - camera_offset.y))
+
+
+        # RENDER PLACE BUILDING
         if self.building != None:
             if self.building_pos_old != Point(-1, -1):
                 # TODO: for optimization
@@ -168,10 +196,24 @@ class GameVue(Scene):
 
             relative_center = self.building_pos // self.cell_pixel_size
             for point in self.building.points:
-                absolute_point = (relative_center + point) * self.cell_pixel_size
-                pygame.draw.rect(self.screen, self.colors[Colors.BLACK], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
+                absolute_point = (relative_center + point) * self.cell_pixel_size - camera_offset
+                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + self.building.coords, None) == None else Colors.RED], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
+
+
+        # RENDER BUILDINGS
+        # TODO : fix the offset
+        for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
+            for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
+                actual_chunk_occupied_coords = self.map.chunk_occupied_coords.get(Point(x, y), None)
+                if actual_chunk_occupied_coords != None:
+                    for point in actual_chunk_occupied_coords:
+                        struct = self.map.occupied_coords.get(point, None)
+                        if struct != None and struct.structure_type == StructureType.BUILDING:
+                            absolute_point = (point - camera_cell) * self.cell_pixel_size + screen_center - camera_offset
+                            pygame.draw.rect(self.screen, self.colors[Colors.BLACK], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
 
     def render_interface(self):
+        # TODO : store the map under the interface in a buffer to refresh only the interface when needed and not the entire map
         ressource_icons_texts = {}
         for ressource_type in RessourceType:
             text = self.render_ressource_text(ressource_type)
@@ -198,4 +240,4 @@ class GameVue(Scene):
             i += 1
 
     def render_ressource_text(self, ressource_type):
-        return self.ressource_font.render(str(self.player.get_ressource(ressource_type)), True, self.colors[Colors.WHITE])
+        return self.ressource_font.render(str(int(self.player.get_ressource(ressource_type))), True, self.colors[Colors.WHITE])

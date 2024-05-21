@@ -1,9 +1,9 @@
 import pygame
 
-from src.vue.Button import Button
-from src.vue.Scene import Scene
-from src.vue.Select import Select
-from src.vue.Slider import Slider
+from vue.Button import Button
+from vue.Scene import Scene
+from vue.Select import Select
+from vue.Slider import Slider
 
 
 # TODO : adjust the select and slider class to the new structure

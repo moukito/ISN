@@ -1,9 +1,9 @@
 import pygame
 
-from src.vue.Button import Button
-from src.vue.Choice import Choice
-from src.vue.Scene import Scene
-from src.vue.SettingScene import SettingsScene
+from vue.Button import Button
+from vue.Choice import Choice
+from vue.Scene import Scene
+from vue.SettingScene import SettingsScene
 
 
 class GameTitle(Scene):
