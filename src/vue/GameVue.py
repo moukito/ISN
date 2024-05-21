@@ -3,15 +3,15 @@ from time import time, time_ns
 
 import pygame
 
-from vue.Scene import Scene
+from src.vue.Scene import Scene
 
-from model.Tools import Colors
-from model.Map import Map
-from model.Geometry import Point
-from model.Perlin import Perlin
-from model.Player import Player
-from model.Ressource import RessourceType
-from model.Structures import BaseCamp, Farm
+from src.model.Tools import Colors
+from src.model.Map import Map
+from src.model.Geometry import Point
+from src.model.Perlin import Perlin
+from src.model.Player import Player
+from src.model.Ressource import RessourceType
+from src.model.Structures import BaseCamp, Farm
 
 
 class GameVue(Scene):
@@ -138,8 +138,6 @@ class GameVue(Scene):
                 self.building_moved = False
             
             self.render_interface()
-
-            pygame.display.flip()
 
         #print(self.clock.get_fps())
         

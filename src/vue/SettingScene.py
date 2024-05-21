@@ -33,6 +33,7 @@ class SettingsScene(Scene):
         self.parent_render = parent_render
         self.opacity = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
         self.opacity.set_alpha(128)
+        self.scale = 0.1
 
         self.volume = pygame.mixer.music.get_volume()
         self.resolution = (self.screen.get_width(), self.screen.get_height())
@@ -48,10 +49,10 @@ class SettingsScene(Scene):
 
         self.apply_button = Button("Apply", self.screen.get_width() * 3 / 4 - button_width / 2,
                                    self.screen.get_height() * 0.9, button_width, button_height, (0, 255, 0),
-                                   "asset/font/Space-Laser-BF65f80ab15c082.otf", font_size)
+                                   "assets/font/Space-Laser-BF65f80ab15c082.otf", font_size)
         self.cancel_button = Button("Cancel", self.screen.get_width() / 4 - button_width / 2,
                                     self.screen.get_height() * 0.9, button_width, button_height, (255, 0, 0),
-                                    "asset/font/Space-Laser-BF65f80ab15c082.otf", font_size)
+                                    "assets/font/Space-Laser-BF65f80ab15c082.otf", font_size)
 
     def handle_events(self, event: pygame.event.Event):
         """
@@ -65,10 +66,12 @@ class SettingsScene(Scene):
 
             self.core.update_parameter(self.parameter)
 
-            pygame.event.post(pygame.event.Event(pygame.QUIT))
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "title"}))
+            self.running = False
         elif self.cancel_button.is_clicked(event):
             # Cancel the settings
-            pygame.event.post(pygame.event.Event(pygame.QUIT))
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "title"}))
+            self.running = False
         elif event.type == pygame.MOUSEMOTION:
             for button in [self.apply_button, self.cancel_button]:
                 if button.is_hovered(event):
@@ -77,6 +80,8 @@ class SettingsScene(Scene):
                     self.change_button_color(button, False)
         self.volume_slider.handle_event(event)
         self.resolution_menu.handle_event(event)
+        if event.type == pygame.QUIT:
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "quit"}))
 
     def update(self):
         """
@@ -87,11 +92,13 @@ class SettingsScene(Scene):
 
         self.resolution = self.resolution_menu.get_value()
 
+        if self.scale < 1:
+            self.scale += 0.1
+
     def render(self):
         """
             Renders the settings screen.
         """
-        self.parent_render()
         self.screen.blit(self.opacity, (0, 0))
 
         volume_text = pygame.font.Font(None, 36).render(f"Volume: {self.volume}", 1, (255, 255, 255))
@@ -105,6 +112,13 @@ class SettingsScene(Scene):
 
         self.apply_button.render(self.screen)
         self.cancel_button.render(self.screen)
+
+        scaled_screen = pygame.transform.scale(self.screen, (
+            int(self.screen.get_width() * self.scale), int(self.screen.get_height() * self.scale)))  # Scale the screen
+
+        self.parent_render()
+        self.screen.blit(scaled_screen, ((self.screen.get_width() - scaled_screen.get_width()) // 2, (
+                self.screen.get_height() - scaled_screen.get_height()) // 2))  # Draw the scaled screen onto the original screen
 
     @staticmethod
     def change_button_color(button, hovered):

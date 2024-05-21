@@ -18,7 +18,7 @@ class Scene(ABC):
             render(): Abstract method for rendering the scene.
     """
 
-    __slots__ = ["running", "screen", "parameter", "core"]
+    __slots__ = ["running", "screen", "parameter", "core", "event"]
 
     def __init__(self, core):
         """
@@ -31,6 +31,7 @@ class Scene(ABC):
         self.core = core
         self.screen = core.screen
         self.parameter = core.parameter
+        self.event = self.core.event
 
     def run(self):
         """

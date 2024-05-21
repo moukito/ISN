@@ -3,7 +3,6 @@ import pickle
 import unittest
 from unittest.mock import patch
 from src.vue.Core import Core
-from src.main import verifying_path
 
 
 class TestDefaultConfig(unittest.TestCase):
