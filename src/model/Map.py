@@ -26,6 +26,7 @@ class Map:
         self.map_chunks = {}
         self.ores = {} # {Point (chunk coords): {OreType: Point}} TODO : Maybe change to {Point (chunk coords): {OreType: Ore}}
         self.buildings = []
+        self.building_type = {} # {StructureType: Structure}
         self.structures = {} # {Point (chunk coords): [Structure]}
         self.occupied_coords = {} # {Point: Structure}
         self.chunk_occupied_coords = {} # {Point (chunk coords): [Point]}
@@ -135,6 +136,10 @@ class Map:
             self.structures[center // Perlin.CHUNK_SIZE].append(structure)
             if structure.structure_type == StructureType.BUILDING:
                 self.buildings.append(structure)
+                type = structure.type
+                if self.building_type.get(type, None) == None:
+                    self.building_type[type] = []
+                self.building_type[type].append(structure)
 
         return can_place
     

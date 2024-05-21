@@ -29,9 +29,9 @@ class Scene(ABC):
                 screen (pygame.Surface): The surface to render the scene on.
         """
         self.running = False
-        self.core = core
-        self.screen = core.screen
-        self.parameter = core.parameter
+        #self.core = core
+        self.screen = core
+        #self.parameter = core.parameter
 
     def run(self):
         """
