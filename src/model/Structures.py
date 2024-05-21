@@ -75,6 +75,8 @@ class BuildingType(Enum):
     PANTRY = 2
     FARM = 3
     MINER_CAMP = 4
+    BUCHERON_CAMP = 5
+    HUNTER_CAMP = 6
 
 class BuildingState(Enum):
     PLACED = 0
@@ -140,4 +142,14 @@ class Farm(Building):
 class MinerCamp(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         # TODO: add costs when the ressource system is ready
-        super().__init__(None, 550, 0, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+        super().__init__(None, 550, 1*60, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+
+class BucheronCamp(Building) :
+    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None : 
+        # TODO : add cost when the ressource system is ready
+        super().__init__(None, 550, 1*60, BuildingType.BUCHERON_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
+
+class HunterCamp(Building) :
+    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None :
+        # TODO : add cost when the ressource system is ready
+        super().__init__(None, 550, 1*60, BuildingType.HUNTER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
