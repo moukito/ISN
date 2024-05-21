@@ -146,8 +146,6 @@ class GameVue(Scene):
             
             self.render_interface()
 
-            pygame.display.flip()
-
         #print(self.clock.get_fps())
         
         #self.clock.tick()
