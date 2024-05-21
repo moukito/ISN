@@ -4,7 +4,7 @@ import platform
 
 SYSTEM = platform.system()
 
-from src.vue.Core import Core
+from vue.Core import Core
 
 
 def exodus():
@@ -12,14 +12,13 @@ def exodus():
         Launches the Exodus game.
         Verifies the path and initializes the Core instance to start the game.
     """
-    verifying_path()
+    verify_path()
     game = Core()
-    game.setup_parameter()
     game.run()
     sys.exit(0)
 
 
-def verifying_path():
+def verify_path():
     """
         Verifies the current path and adjusts the working directory if necessary based on the platform.
 xvg()

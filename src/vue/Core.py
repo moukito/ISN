@@ -24,7 +24,7 @@ class Core:
             run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen", "parameter"]
+    __slots__ = ["screen", "title_screen", "parameter", "game_screen"]
 
     def __init__(self):
         """
@@ -35,6 +35,8 @@ class Core:
         self.parameter = None
 
         pygame.init()
+
+        self.setup_parameter()
 
     def __del__(self):
         """
@@ -54,37 +56,26 @@ class Core:
         """
             Sets up the game parameters based on configuration.
         """
-        self.window_setup()
+        if not os.path.isfile("config.json"):
+            with open("config.json", "w") as configFile:
+                json.dump(self.default_config(), configFile)
 
-        if not os.path.isfile("config"):
-            self.default_config()
-
-        dico = self.read_config()
-
-        if dico.get("version") != self.game_version():
-            self.update_parameter(dico)
-            dico = self.read_config()
+        with open("config.json", "r") as configFile:
+            dico = json.load(configFile)
+            if dico.get("version") != self.game_version():
+                self.update_parameter()
 
         if dico["fullscreen"]:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]), pygame.FULLSCREEN)
         else:
             self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
-        self.parameter = dico
 
-    @staticmethod
-    def read_config():
-        with open("config", "rb") as configFile:
-            dico = pickle.load(configFile)
-        return dico
-
-    def default_config(self):
+    def default_config(self) -> dict:
         """
             Returns default configuration parameters.
         """
-        with open("config", "wb") as configFile:
-            pickle.dump(
-                dict(version=self.game_version(), fullscreen=True, width=2560,
-                     height=1600, volume=0.1), configFile)
+        return dict(version="1.0.0", fullscreen=True, width=pygame.display.get_desktop_sizes()[0][0],
+                    height=pygame.display.get_desktop_sizes()[0][1])
 
     @staticmethod
     def game_version() -> str:
@@ -95,25 +86,17 @@ class Core:
             'utf-8').strip()
         return "0.0." + str(patch)
 
-    def update_parameter(self, dico):
+    def update_parameter(self):
         """
             Updates the game parameters if necessary.
         """
-        self.default_config()
-
-        default_dico = self.read_config()
-
-        with open("config", "wb") as configFile:
-            for key in dico.keys():
-                if key != "version":
-                    default_dico[key] = dico[key]
-            pickle.dump(default_dico, configFile)
+        pass
 
     def run(self):
         """
             Starts the game execution.
         """
-        self.title_screen = GameTitle(self)
-        del self.title_screen
+        #self.title_screen = GameTitle(self)
+        #del self.title_screen
         self.game_screen  = GameVue(self.screen)
         self.game_screen.run()

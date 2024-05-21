@@ -83,7 +83,6 @@ class GameVue(Scene):
         }
 
     def handle_events(self, event):
-        #print(event)
         if event.type == pygame.MOUSEBUTTONDOWN:
             pressed_mouse_buttons = pygame.mouse.get_pressed()
             if pressed_mouse_buttons[0]:
@@ -93,14 +92,12 @@ class GameVue(Scene):
                     self.mouse_pos = self.start_click_pos = Point(pos[0], pos[1])
         elif event.type == pygame.MOUSEBUTTONUP:
             pressed_mouse_buttons = pygame.mouse.get_pressed()
-            #print(pressed_mouse_buttons)
             if not pressed_mouse_buttons[0]:
                 if self.building == None:
                     self.clicking = False
                 else:
                     self.building.coords = (self.building_pos + Point(int(self.camera_pos.x), int(self.camera_pos.y)) - Point(self.screen_width, self.screen_height) // 2) // self.cell_pixel_size
                     result = self.map.place_structure(self.building)
-                    print(result, self.building.coords)
                     if result:
                         self.reset_building()
         elif event.type == pygame.MOUSEMOTION:
@@ -116,7 +113,6 @@ class GameVue(Scene):
                 self.building_moved = (self.mouse_pos - self.building_pos) // self.cell_pixel_size != Point.origin()
                 if self.building_moved:
                     self.building_pos = pos_point
-                    print(self.building_pos)
             self.mouse_pos = pos_point
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_p:
