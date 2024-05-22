@@ -18,9 +18,7 @@ class Biomes(Enum):
     SNOW = 6
 
 class Map:
-    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "building_type", "structures", "humans", "occupied_coords", "chunk_occupied_coords"]
-
-    CELL_SIZE = 30
+    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "structures", "occupied_coords", "chunk_occupied_coords"]
 
     def __init__(self, seed = 1) -> None:
         self.perlin = Perlin(seed, 4, 2, 1, 50, 1)
@@ -30,7 +28,6 @@ class Map:
         self.buildings = []
         self.building_type = {} # {StructureType: Structure}
         self.structures = {} # {Point (chunk coords): [Structure]}
-        self.humans = {} # {Point (chunk coords): [Human]}
         self.occupied_coords = {} # {Point: Structure}
         self.chunk_occupied_coords = {} # {Point (chunk coords): [Point]}
 
@@ -64,15 +61,10 @@ class Map:
                     i += 1
 
                 if not found:
+                    self.ores[chunk_coords][ore_type].append(position)
                     # TODO: maybe remove the code below in favor of self.ores?
                     for point in ore.points:
                         self.occupied_coords[absolute_chunk_origin + position + point] = ore
-                        absolute_point = position + point + absolute_chunk_origin
-                        self.occupied_coords[absolute_point] = ore
-                        chunk_coords = absolute_point // Perlin.CHUNK_SIZE
-                        if self.chunk_occupied_coords.get(chunk_coords, None) == None:
-                            self.chunk_occupied_coords[chunk_coords] = []
-                        self.chunk_occupied_coords[chunk_coords].append(absolute_point)
 
     def process_chunk(self, chunk_data, chunk_coords):
         processed_chunk = np.empty((Perlin.CHUNK_SIZE, Perlin.CHUNK_SIZE))
@@ -80,7 +72,6 @@ class Map:
             for j in range(Perlin.CHUNK_SIZE):
                 height = chunk_data[i][j]
                 position = Point(i, j)
-                # TODO : Fine tune the values
                 if height > 3.5:
                     processed_chunk[i][j] = Biomes.SNOW.value
                     self.try_generate_ore(chunk_coords, position, 0.005, 3, [OreType.CRYSTAL], 3, OreType.CRYSTAL)

@@ -24,15 +24,17 @@ class Core:
             run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen", "parameter", "game_screen"]
+    __slots__ = ["screen", "title_screen", "parameter", "game_screen", "event"]
 
     def __init__(self):
         """
             Initializes the Core instance.
         """
+        self.game_screen = None
         self.screen = None
         self.title_screen = None
         self.parameter = None
+        self.event = pygame.event.custom_type()
 
         pygame.init()
 
@@ -50,7 +52,7 @@ class Core:
             Initializes the pygame module.
         """
         pygame.display.set_caption("Exodus", "exodus icon")
-        pygame.display.set_icon(pygame.image.load("asset/icon/exodus.png"))
+        pygame.display.set_icon(pygame.image.load("assets/icon/exodus.png"))
 
     def setup_parameter(self):
         """
@@ -65,10 +67,15 @@ class Core:
             if dico.get("version") != self.game_version():
                 self.update_parameter()
 
-        if dico["fullscreen"]:
-            self.screen = pygame.display.set_mode((dico["width"], dico["height"]), pygame.FULLSCREEN)
+        self.parameter = dico
+        self.update_screen()
+
+    def update_screen(self):
+        if self.parameter["fullscreen"]:
+            flags = pygame.FULLSCREEN | pygame.SCALED
         else:
-            self.screen = pygame.display.set_mode((dico["width"], dico["height"]))
+            flags = pygame.SCALED
+        self.screen = pygame.display.set_mode((self.parameter["width"], self.parameter["height"]), flags)
 
     def default_config(self) -> dict:
         """
@@ -96,7 +103,17 @@ class Core:
         """
             Starts the game execution.
         """
-        #self.title_screen = GameTitle(self)
-        #del self.title_screen
-        self.game_screen  = GameVue(self.screen)
+        self.title_screen = GameTitle(self)
+        self.title_screen.setup()
+        self.title_screen.run()
+        del self.title_screen
+        for event in pygame.event.get(self.event):
+            if event.dict.get("scene") == "game":
+                self.start_game()
+
+    def start_game(self):
+        self.game_screen = GameVue(self)
+        # TODO : self.game_screen.setup()
         self.game_screen.run()
+        del self.game_screen
+        #TODO : self.run()

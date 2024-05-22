@@ -2,13 +2,13 @@ import pygame
 
 
 class Select:
-    def __init__(self, x, y, width, height, options):
+    def __init__(self, x, y, width, height, options, default_value=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.options = options
-        self.value = options[0]
+        self.value = default_value if default_value in options else options[0]
         self.is_open = False
 
     def render(self, screen):

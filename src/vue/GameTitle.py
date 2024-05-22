@@ -28,25 +28,33 @@ class GameTitle(Scene):
                 screen (pygame.Surface): The surface to render the title screen on.
         """
         super().__init__(core)
-        self.bg = pygame.transform.smoothscale(pygame.image.load("asset/background.jpg"),
-                                               (self.screen.get_width(), self.screen.get_height()))
-        pygame.mixer.music.load("asset/music/titleScreen.mp3")
+
+        self.bg = None
+        self.buttons = None
+
+        pygame.mixer.music.load("assets/music/titleScreen.mp3")
         pygame.mixer.music.set_volume(self.parameter["volume"])
         pygame.mixer.music.play()
 
         self.choice = Choice()
         self.options = ["jouer", "option", "quitter"]
-        font_size = int(self.screen.get_height() * 0.065)
 
+    def setup(self):
+        self.core.update_screen()
+
+        pygame.mixer.music.set_volume(self.parameter["volume"])
+
+        self.bg = pygame.transform.smoothscale(pygame.image.load("assets/icon/background.jpg"),
+                                               (self.screen.get_width(), self.screen.get_height()))
+
+        font_size = int(self.screen.get_height() * 0.065)
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
         self.buttons = [Button(option, (self.screen.get_width() - button_width) // 2,
                                int(self.screen.get_height() * 0.65) + i * (self.screen.get_height() * 0.1),
                                button_width, button_height,
-                               (255, 255, 255), "asset/font/Space-Laser-BF65f80ab15c082.otf", font_size) for i, option
+                               (255, 255, 255), "assets/font/Space-Laser-BF65f80ab15c082.otf", font_size) for i, option
                         in enumerate(self.options)]
-
-        self.run()
 
     def __del__(self):
         pygame.mixer.music.stop()
@@ -72,6 +80,9 @@ class GameTitle(Scene):
             for i, button in enumerate(self.buttons):
                 if button.is_hovered(event):
                     self.choice.set_choice(i + 1)
+        elif event.type == self.event:
+            if event.dict.get("scene") == "quit":
+                pygame.event.post(pygame.event.Event(pygame.QUIT))  # Close the game and exit
 
     def update(self):
         """
@@ -106,7 +117,7 @@ class GameTitle(Scene):
             button_width, button_height = button.get_size()  # Get the size of the text object
             x = (self.screen.get_width() - button_width) // 2  # Calculate the horizontal position (centered)
             y = int(self.screen.get_height() * 0.65) + i * (
-                        self.screen.get_height() * 0.1)  # Calculate the vertical position (80% from the top plus an offset)
+                    self.screen.get_height() * 0.1)  # Calculate the vertical position (80% from the top plus an offset)
 
             # Draw a triangle around the current choice
             if choice == i + 1:
@@ -125,9 +136,11 @@ class GameTitle(Scene):
             Handles the choice of the player.
         """
         if choice == 1:
-            pass
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "game"}))
+            self.running = False
         elif choice == 2:
-            settings_scene = SettingsScene(self.core)  # Create and run the settings scene
+            settings_scene = SettingsScene(self.core, self.render)  # Create and run the settings scene
             settings_scene.run()
+            self.setup()
         elif choice == 3:
             pygame.event.post(pygame.event.Event(pygame.QUIT))

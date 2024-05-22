@@ -7,7 +7,6 @@ from vue.Slider import Slider
 
 
 # TODO : adjust the select and slider class to the new structure
-# TODO : make pygame a global import
 class SettingsScene(Scene):
     """
         Represents the settings screen of the game.
@@ -23,7 +22,7 @@ class SettingsScene(Scene):
             change_resolution(): Changes the game resolution.
     """
 
-    def __init__(self, core):
+    def __init__(self, core, parent_render):
         """
             Initializes the SettingsScene instance with the screen.
 
@@ -31,12 +30,18 @@ class SettingsScene(Scene):
                 core (pygame.Surface): The surface to render the settings screen on.
         """
         super().__init__(core)
+        self.parent_render = parent_render
+        self.opacity = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        self.opacity.set_alpha(128)
+        self.scale = 0.1
+
         self.volume = pygame.mixer.music.get_volume()
         self.resolution = (self.screen.get_width(), self.screen.get_height())
 
         self.volume_slider = Slider(20, 100, 200, 20, 0.0, 1.0, self.volume)
         self.resolution_menu = Select(20, 200, 200, 50,
-                                      [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)])
+                                      [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)],
+                                      self.resolution)
 
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
@@ -44,10 +49,10 @@ class SettingsScene(Scene):
 
         self.apply_button = Button("Apply", self.screen.get_width() * 3 / 4 - button_width / 2,
                                    self.screen.get_height() * 0.9, button_width, button_height, (0, 255, 0),
-                                   "asset/font/Space-Laser-BF65f80ab15c082.otf", font_size)
+                                   "assets/font/Space-Laser-BF65f80ab15c082.otf", font_size)
         self.cancel_button = Button("Cancel", self.screen.get_width() / 4 - button_width / 2,
                                     self.screen.get_height() * 0.9, button_width, button_height, (255, 0, 0),
-                                    "asset/font/Space-Laser-BF65f80ab15c082.otf", font_size)
+                                    "assets/font/Space-Laser-BF65f80ab15c082.otf", font_size)
 
     def handle_events(self, event: pygame.event.Event):
         """
@@ -55,19 +60,18 @@ class SettingsScene(Scene):
         """
         if self.apply_button.is_clicked(event):
             # Apply the settings
-            pygame.mixer.music.set_volume(self.volume)
-            pygame.display.set_mode(self.resolution)
-
             self.parameter["volume"] = self.volume
             self.parameter["width"] = self.resolution[0]
             self.parameter["height"] = self.resolution[1]
 
             self.core.update_parameter(self.parameter)
 
-            pygame.event.post(pygame.event.Event(pygame.QUIT))
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "title"}))
+            self.running = False
         elif self.cancel_button.is_clicked(event):
             # Cancel the settings
-            pygame.event.post(pygame.event.Event(pygame.QUIT))
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "title"}))
+            self.running = False
         elif event.type == pygame.MOUSEMOTION:
             for button in [self.apply_button, self.cancel_button]:
                 if button.is_hovered(event):
@@ -76,18 +80,27 @@ class SettingsScene(Scene):
                     self.change_button_color(button, False)
         self.volume_slider.handle_event(event)
         self.resolution_menu.handle_event(event)
+        if event.type == pygame.QUIT:
+            pygame.event.post(pygame.event.Event(self.event, {"scene": "quit"}))
 
     def update(self):
         """
             Updates the settings screen.
         """
         self.volume = self.volume_slider.get_value()
+        pygame.mixer.music.set_volume(self.volume)
+
         self.resolution = self.resolution_menu.get_value()
+
+        if self.scale < 1:
+            self.scale += 0.1
 
     def render(self):
         """
             Renders the settings screen.
         """
+        self.screen.blit(self.opacity, (0, 0))
+
         volume_text = pygame.font.Font(None, 36).render(f"Volume: {self.volume}", 1, (255, 255, 255))
         self.volume_slider.render(self.screen)
 
@@ -99,6 +112,13 @@ class SettingsScene(Scene):
 
         self.apply_button.render(self.screen)
         self.cancel_button.render(self.screen)
+
+        scaled_screen = pygame.transform.scale(self.screen, (
+            int(self.screen.get_width() * self.scale), int(self.screen.get_height() * self.scale)))  # Scale the screen
+
+        self.parent_render()
+        self.screen.blit(scaled_screen, ((self.screen.get_width() - scaled_screen.get_width()) // 2, (
+                self.screen.get_height() - scaled_screen.get_height()) // 2))  # Draw the scaled screen onto the original screen
 
     @staticmethod
     def change_button_color(button, hovered):
