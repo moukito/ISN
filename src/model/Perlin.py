@@ -5,7 +5,7 @@ import math
 class Perlin:
     __slots__ = ["seed", "octave", "persistence", "lacunarity", "scale", "amplitude", "chunks", "gradients", "permutation", "x_offset", "y_offset"]
 
-    CHUNK_SIZE = 32
+    CHUNK_SIZE = 32 # TODO : Fix the glitch when putting 16
 
     def __init__(self, seed = 1, octave = 1, persistence = 1.0, lacunarity = 1.0, scale = 1.0, amplitude = 1.0) -> None:
         self.seed = seed

@@ -11,12 +11,13 @@ from model.Geometry import Point, Rectangle
 from model.Perlin import Perlin
 from model.Player import Player
 from model.Ressource import RessourceType
-from model.Structures import StructureType, Structure, BaseCamp, Farm 
+from model.Structures import StructureType, Structure, BaseCamp, Farm
+from model.Human import Colonist
 from model.Saver import Saver
 
 
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "camera_pos", "clicking", "camera_moved", "start_click_pos", "mouse_pos", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp"]
+    __slots__ = ["saver", "player", "map", "camera_pos", "clicking", "camera_moved", "start_click_pos", "mouse_pos", "selection_pos_start", "selection_pos_end", "selecting", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp"]
 
     def __init__(self, screen: pygame.Surface):
         super().__init__(screen)
@@ -26,18 +27,19 @@ class GameVue(Scene):
         self.player = Player()
 
         self.map = Map()
-        self.actual_chunks = None
-        self.buildings = []
 
         self.clicking = False
         self.camera_moved = True
         self.camera_pos = Point.origin()
         self.start_click_pos = Point.origin()
         self.mouse_pos = Point.origin()
+        self.selection_pos_start = Point.origin()
+        self.selection_pos_end = Point.origin()
+        self.selecting = False
 
         self.reset_building()
         
-        self.cell_pixel_size = 30
+        self.cell_pixel_size = Map.CELL_SIZE
         self.screen_width, self.screen_height = self.screen.get_width(), self.screen.get_height()
         self.cell_width_count = ceil(self.screen_width / self.cell_pixel_size)
         self.cell_height_count = ceil(self.screen_height / self.cell_pixel_size)
@@ -85,7 +87,9 @@ class GameVue(Scene):
     def handle_events(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             pressed_mouse_buttons = pygame.mouse.get_pressed()
-            if pressed_mouse_buttons[0]:
+            if pressed_mouse_buttons[2]:
+                self.selection_pos = pygame.mouse.get_pos()
+            elif pressed_mouse_buttons[0]:
                 if self.building == None:
                     self.clicking = True
                     pos = pygame.mouse.get_pos()
@@ -100,6 +104,9 @@ class GameVue(Scene):
                     result = self.map.place_structure(self.building)
                     if result:
                         self.reset_building()
+            elif pressed_mouse_buttons[2]:
+                pass
+                # TODO
         elif event.type == pygame.MOUSEMOTION:
             pos  = pygame.mouse.get_pos()
             pos_point = Point(pos[0], pos[1])
@@ -124,6 +131,11 @@ class GameVue(Scene):
                 else:
                     self.reset_building()
                     self.building_moved = True
+            if event.key == pygame.K_h:
+                chunk_pos = self.camera_pos // Perlin.CHUNK_SIZE // self.map.CELL_SIZE
+                if self.map.humans.get(chunk_pos, None) == None:
+                    self.map.humans[chunk_pos] = []
+                self.map.humans[chunk_pos].append(Colonist(self.map, self.camera_pos, self.player))
             if event.key == pygame.K_s:
                 self.saver.save_map(self.map)
 
@@ -180,7 +192,6 @@ class GameVue(Scene):
 
         tl_chunk = camera_chunk - chunks_tl
         chunks = self.map.get_area_around_chunk(camera_chunk - chunks_tl, chunks_size.x + 1, chunks_size.y + 1)
-        self.actual_chunks = chunks
 
         # RENDER MAP
         for i in range(0, cells_size.x):
@@ -190,19 +201,7 @@ class GameVue(Scene):
                 self.screen.blit(self.biomes_textures[Biomes(int(chunks[x][y]))], (i * self.cell_pixel_size - camera_offset.x, j * self.cell_pixel_size - camera_offset.y))
 
 
-        # RENDER PLACE BUILDING
-        if self.building != None:
-            if self.building_pos_old != Point(-1, -1):
-                # TODO: for optimization
-                pass
-
-            relative_center = self.building_pos // self.cell_pixel_size
-            for point in self.building.points:
-                absolute_point = (relative_center + point) * self.cell_pixel_size - camera_offset
-                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + self.building.coords, None) == None else Colors.RED], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
-
-
-        # RENDER BUILDINGS
+        # RENDER STRUCTURES AND HUMANS
         # TODO : fix the offset
         for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
             for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
@@ -210,9 +209,31 @@ class GameVue(Scene):
                 if actual_chunk_occupied_coords != None:
                     for point in actual_chunk_occupied_coords:
                         struct = self.map.occupied_coords.get(point, None)
-                        if struct != None and struct.structure_type == StructureType.BUILDING:
+                        if struct != None:
                             absolute_point = (point - camera_cell) * self.cell_pixel_size + screen_center - camera_offset
-                            pygame.draw.rect(self.screen, self.colors[Colors.BLACK], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
+                            pygame.draw.rect(self.screen, self.colors[Colors.BLACK if struct.structure_type == StructureType.BUILDING else Colors.BLUEVIOLET], # TODO : Temporary
+                                            (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
+                            
+                actual_chunk_humans = self.map.humans.get(Point(x, y), None)
+                if actual_chunk_humans != None:
+                    for human in actual_chunk_humans:
+                        absolute_center = human.current_location - camera_cell * self.cell_pixel_size + screen_center - camera_offset
+                        pygame.draw.circle(self.screen, self.colors[Colors.AQUA], (absolute_center.x, absolute_center.y), 10)
+                        
+                            
+
+        # RENDER PLACE BUILDING
+        if self.building != None:
+            if self.building_pos_old != Point(-1, -1):
+                # TODO: for optimization
+                pass
+
+            # TODO : fix the red color appearing when there is no obstacle 
+            relative_center = self.building_pos // self.cell_pixel_size
+            for point in self.building.points:
+                absolute_point = (relative_center + point) * self.cell_pixel_size - camera_offset
+                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + self.building.coords, None) == None else Colors.RED], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
+
 
     def render_interface(self):
         # TODO : store the map under the interface in a buffer to refresh only the interface when needed and not the entire map

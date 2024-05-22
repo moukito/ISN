@@ -1,3 +1,5 @@
+from math import sqrt
+
 class Point:
     __slots__ = ["x", "y"]
 
@@ -64,6 +66,9 @@ class Point:
         tmp = self.x
         self.x = self.y
         self.y = tmp
+
+    def distance(self, other):
+        return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def origin():
         return Point(0, 0)
