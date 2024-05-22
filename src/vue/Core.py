@@ -1,6 +1,5 @@
-import json
 import os
-import pickle
+import json
 import subprocess
 
 import pygame
@@ -58,7 +57,7 @@ class Core:
         """
         self.window_setup()
 
-        if not os.path.isfile("config"):
+        if not os.path.isfile("config.json"):
             self.default_config()
 
         dico = self.read_config()
@@ -81,16 +80,16 @@ class Core:
 
     @staticmethod
     def read_config():
-        with open("config", "rb") as configFile:
-            dico = pickle.load(configFile)
+        with open("config.json", "r") as configFile:
+            dico = json.load(configFile)
         return dico
 
     def default_config(self):
         """
         Returns default configuration parameters.
         """
-        with open("config", "wb") as configFile:
-            pickle.dump(
+        with open("config.json", "w") as configFile:
+            json.dump(
                 dict(
                     version=self.game_version(),
                     fullscreen=True,
@@ -121,11 +120,11 @@ class Core:
 
         default_dico = self.read_config()
 
-        with open("config", "wb") as configFile:
+        with open("config.json", "w") as configFile:
             for key in dico.keys():
                 if key != "version":
                     default_dico[key] = dico[key]
-            pickle.dump(default_dico, configFile)
+            json.dump(default_dico, configFile)
 
     def run(self):
         """

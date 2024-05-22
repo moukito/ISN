@@ -98,7 +98,7 @@ class Map:
                     for point in ore.points:
                         self.occupied_coords[
                             absolute_chunk_origin + position + point
-                            ] = ore
+                        ] = ore
 
     def process_chunk(self, chunk_data, chunk_coords):
         processed_chunk = np.empty((Perlin.CHUNK_SIZE, Perlin.CHUNK_SIZE))
