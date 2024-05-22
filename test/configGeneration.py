@@ -3,7 +3,6 @@ import pickle
 import unittest
 from unittest.mock import patch
 from src.vue.Core import Core
-from src.main import verify_path
 
 
 class TestDefaultConfig(unittest.TestCase):
@@ -18,7 +17,7 @@ class TestDefaultConfig(unittest.TestCase):
         self.core.default_config()
         self.assertTrue(os.path.isfile("config.json"))
 
-    @patch('src.vue.Core.Core.game_version', return_value="0.0.1")
+    @patch("src.vue.Core.Core.game_version", return_value="0.0.1")
     def test_default_config_writes_correct_data_to_config_file(self, mock_game_version):
         self.core.default_config()
         with open("config.json", "rb") as configFile:
@@ -30,5 +29,5 @@ class TestDefaultConfig(unittest.TestCase):
         self.assertEqual(config_data["volume"], 0.1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
