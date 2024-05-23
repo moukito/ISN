@@ -29,7 +29,7 @@ def AStar(start, end, map):
         open_list.pop(current_index)
         closed_list.append(current_node)
 
-        if current_node == end_node:
+        if current_node.position == end_node.position:
             path = []
             current = current_node
             while current is not None:
@@ -38,11 +38,12 @@ def AStar(start, end, map):
             return path[::-1]
 
         neighbors = []
-        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+        for new_position in [Point(0, -1), Point(0, 1), Point(-1, 0), Point(1, 0), Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)]:
+            node_position = current_node.position + new_position
 
-            if map.occupied_coords.get(Point(node_position[0], node_position[1]), None):
-                continue
+            # TODO : When we want the obstacles (structures) to be taken into account
+            #if map.occupied_coords.get(node_position, None) is not None:
+            #    continue
 
             new_node = Node(node_position, current_node)
             neighbors.append(new_node)
@@ -52,7 +53,7 @@ def AStar(start, end, map):
                 continue
 
             neighbor.g = current_node.g + 1
-            neighbor.h = abs(neighbor.position[0] - end_node.position[0]) + abs(neighbor.position[1] - end_node.position[1])
+            neighbor.h = abs(neighbor.position.x - end_node.position.x) + abs(neighbor.position.y - end_node.position.y)
             neighbor.f = neighbor.g + neighbor.h
 
             if neighbor in open_list:

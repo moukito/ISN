@@ -58,17 +58,34 @@ class OreType(Enum):
     COPPER = 2
     GOLD = 3
     VULCAN = 4
-    CRYSTAL = 5    
+    CRYSTAL = 5
+
+oreToRessourceType = {
+    OreType.IRON: RessourceType.IRON,
+    OreType.COPPER: RessourceType.COPPER,
+    OreType.GOLD: RessourceType.GOLD,
+    OreType.VULCAN: RessourceType.VULCAN,
+    OreType.CRYSTAL: RessourceType.CRYSTAL
+}
 
 class Ore(Structure):
-    __slots__ = ["type", "health"]
+    __slots__ = ["type", "health", "ore_mined_callback"]
 
-    typeToHealth = {OreType.IRON: 500, OreType.COPPER: 400, OreType.GOLD: 250, OreType.VULCAN: 100, OreType.CRYSTAL: 150} 
+    typeToHealth = {OreType.IRON: 1000, OreType.COPPER: 800, OreType.GOLD: 500, OreType.VULCAN: 200, OreType.CRYSTAL: 300} 
 
-    def __init__(self, type, coords, orientation = Orientation.RANDOM) -> None:
+    # TODO : add the removing of health points
+    def __init__(self, type, coords, ore_mined_callback, orientation = Orientation.RANDOM) -> None:
         super().__init__(StructureType.ORE, coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
         self.type = type
         self.health = self.typeToHealth[type]
+        self.ore_mined_callback = ore_mined_callback
+
+    def mine(self, quantity):
+        self.health -= quantity
+        if self.health <= 0:
+            self.ore_mined_callback(self)
+            return True
+        return False
 
 class BuildingType(Enum):
     BASE_CAMP = 1
@@ -91,7 +108,7 @@ class Building(Structure):
         self.health = health
         self.building_duration = building_duration
         self.building_time = 0
-        self.workers = 1 # TODO : change to 0 when the robot system is ready
+        self.workers = 0
         self.type = type
         self.player = player
         self.state = BuildingState.PLACED

@@ -26,21 +26,25 @@ class Map:
         "buildings",
         "structures",
         "occupied_coords",
+        "chunk_humans",
+        "humans",
         "chunk_occupied_coords",
         "building_type",
     ]
+
+    CELL_SIZE = 30
 
     def __init__(self, seed=1) -> None:
         self.perlin = Perlin(seed, 4, 2, 1, 50, 1)
         # self.perlin = Perlin(seed, 4, 2, 2, 100, 1)
         self.map_chunks = {}
-        self.ores = (
-            {}
-        )  # {Point (chunk coords): {OreType: Point}} TODO : Maybe change to {Point (chunk coords): {OreType: Ore}}
+        self.ores = {}  # {Point (chunk coords): {OreType: Point}} TODO : Maybe change to {Point (chunk coords): {OreType: Ore}}
         self.buildings = []
-        self.building_type = {}  # {StructureType: Structure}
+        self.building_type = {}  # {BuildingType: Building}
         self.structures = {}  # {Point (chunk coords): [Structure]}
         self.occupied_coords = {}  # {Point: Structure}
+        self.chunk_humans = {} # {Point (chunk coords): [Humans]}
+        self.humans = []
         self.chunk_occupied_coords = {}  # {Point (chunk coords): [Point]}
 
     def try_generate_ore(
@@ -78,8 +82,8 @@ class Map:
                 if self.ores[chunk_coords].get(ore_type, None) == None:
                     self.ores[chunk_coords][ore_type] = []
 
-                ore = Ore(ore_type, position)
                 absolute_chunk_origin = chunk_coords * Perlin.CHUNK_SIZE
+                ore = Ore(ore_type, absolute_chunk_origin + position, self.ore_mined_callback)
                 found = False
                 i = 0
                 while not found and i < len(ore.points):
@@ -93,12 +97,16 @@ class Map:
                     i += 1
 
                 if not found:
-                    self.ores[chunk_coords][ore_type].append(position)
+                    self.ores[chunk_coords][ore_type].append(absolute_chunk_origin + position)
                     # TODO: maybe remove the code below in favor of self.ores?
                     for point in ore.points:
                         self.occupied_coords[
                             absolute_chunk_origin + position + point
                         ] = ore
+                        chunk_pos = (absolute_chunk_origin + position + point) // Perlin.CHUNK_SIZE
+                        if self.chunk_occupied_coords.get(chunk_pos, None) is None:
+                            self.chunk_occupied_coords[chunk_pos] = []
+                        self.chunk_occupied_coords[chunk_pos].append(absolute_chunk_origin + position + point)
 
     def process_chunk(self, chunk_data, chunk_coords):
         processed_chunk = np.empty((Perlin.CHUNK_SIZE, Perlin.CHUNK_SIZE))
@@ -106,7 +114,7 @@ class Map:
             for j in range(Perlin.CHUNK_SIZE):
                 height = chunk_data[i][j]
                 position = Point(i, j)
-                if height > 3.5:
+                if height > 3.25:
                     processed_chunk[i][j] = Biomes.SNOW.value
                     self.try_generate_ore(
                         chunk_coords,
@@ -117,7 +125,7 @@ class Map:
                         3,
                         OreType.CRYSTAL,
                     )
-                elif height > 2:
+                elif height > 1.5:
                     processed_chunk[i][j] = Biomes.DESOLATED_FOREST.value
                     self.try_generate_ore(
                         chunk_coords,
@@ -128,9 +136,9 @@ class Map:
                         2,
                         OreType.COPPER,
                     )
-                elif height > 1:
+                elif height > 0.75:
                     processed_chunk[i][j] = Biomes.MUSHROOM_FOREST.value
-                elif height > -2:
+                elif height > -2.75:
                     processed_chunk[i][j] = Biomes.PLAIN.value
                     self.try_generate_ore(
                         chunk_coords,
@@ -141,7 +149,7 @@ class Map:
                         2,
                         OreType.IRON,
                     )
-                elif height > -3:
+                elif height > -4:
                     processed_chunk[i][j] = Biomes.VOLCANO.value
                     self.try_generate_ore(
                         chunk_coords,
@@ -211,7 +219,38 @@ class Map:
                 self.building_type[type].append(structure)
 
         return can_place
+    
+    def ore_mined_callback(self, ore):
+        try:
+            self.ores[ore.coords // Perlin.CHUNK_SIZE][ore.type].remove(ore.coords)
+        except ValueError:
+            pass
+
+        for point in ore.points:
+            try:
+                actual_chunk_pos = (ore.coords + point) // Perlin.CHUNK_SIZE
+                self.occupied_coords.pop(ore.coords + point)
+                self.chunk_occupied_coords[actual_chunk_pos].remove(ore.coords + point)
+            except Exception:
+                pass
 
     def update(self, duration):
+        need_render = False
+
         for building in self.buildings:
             building.update(duration)
+
+        chunk_humans = self.chunk_humans.copy()
+        for chunk_coords, humans in self.chunk_humans.items():
+            for human in humans:
+                if human.update(duration):
+                    need_render = True
+                    new_chunk_coords = human.current_location // Map.CELL_SIZE // Perlin.CHUNK_SIZE
+                    if new_chunk_coords != chunk_coords:
+                        if chunk_humans.get(new_chunk_coords, None) is None:
+                            chunk_humans[new_chunk_coords] = []
+                        chunk_humans[new_chunk_coords].append(human)
+                        chunk_humans[chunk_coords].remove(human)
+        self.chunk_humans = chunk_humans
+
+        return need_render

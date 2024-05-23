@@ -64,6 +64,9 @@ class Point:
         tmp = self.x
         self.x = self.y
         self.y = tmp
+    
+    def distance(self, other):
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
     def origin():
         return Point(0, 0)
@@ -76,7 +79,15 @@ class Rectangle:
 
     @staticmethod
     def fromPoints(p1, p2):
-        return Rectangle(p1.x, p1.y, p2.x, p2.y)
+        x1 = p1.x
+        x2 = p2.x
+        y1 = p1.y
+        y2 = p2.y
+        if x1 > x2:
+            x1, x2 = x2, x1
+        if y1 > y2:
+            y1, y2 = y2, y1
+        return Rectangle(x1, y1, x2, y2)
     
     def __str__(self):
         return f"Rectangle({self.x1}, {self.y1}, {self.x2}, {self.y2})"
@@ -99,6 +110,19 @@ class Rectangle:
             for x in range(self.y1, self.y2 + 1):
                 points.append(Point(x, y))
         return points
+    
+class Circle:
+    __slots__ = ["center", "radius"]
+
+    def __init__(self, center, radius) -> None:
+        self.center = center
+        self.radius = radius
+
+    def contains(self, point):
+        return self.center.distance(point) <= self.radius
+
+    def overlap(self, other):
+        return self.center.distance(other.center) <= self.radius + other.radius
     
 class Polygon:
     __slots__ = ["points"]
