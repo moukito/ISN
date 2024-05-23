@@ -18,7 +18,9 @@ class Biomes(Enum):
     SNOW = 6
 
 class Map:
-    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "structures", "occupied_coords", "chunk_occupied_coords"]
+    __slots__ = ["perlin", "map_chunks", "ores", "buildings", "building_type", "structures", "occupied_coords", "chunk_humans", "humans", "chunk_occupied_coords"]
+
+    CELL_SIZE = 30
 
     def __init__(self, seed = 1) -> None:
         self.perlin = Perlin(seed, 4, 2, 1, 50, 1)
@@ -29,6 +31,8 @@ class Map:
         self.building_type = {} # {StructureType: Structure}
         self.structures = {} # {Point (chunk coords): [Structure]}
         self.occupied_coords = {} # {Point: Structure}
+        self.chunk_humans = {} # {Point (chunk coords): [Humans]}
+        self.humans = []
         self.chunk_occupied_coords = {} # {Point (chunk coords): [Point]}
 
     def try_generate_ore(self, chunk_coords, position, treshold, search_area_size, search_ores, ores_count_treshold, ore_type):
@@ -40,15 +44,15 @@ class Map:
                 values.append(i)
             for i in range(search_area_size * search_area_size):
                 chunk_ores = self.ores.get(Point(chunk_coords.x + values[i // search_area_size], chunk_coords.y + values[i % search_area_size]), None)
-                if chunk_ores is not None:
+                if chunk_ores != None:
                     for search_ore in search_ores:
                         actual_chunk_ores = chunk_ores.get(search_ore, None)
-                        if actual_chunk_ores is not None:
+                        if actual_chunk_ores != None:
                             ores_count += len(actual_chunk_ores)
             if ores_count < ores_count_treshold:
-                if self.ores.get(chunk_coords, None) is None:
+                if self.ores.get(chunk_coords, None) == None:
                     self.ores[chunk_coords] = {}
-                if self.ores[chunk_coords].get(ore_type, None) is None:
+                if self.ores[chunk_coords].get(ore_type, None) == None:
                     self.ores[chunk_coords][ore_type] = []
 
                 absolute_chunk_origin = chunk_coords * Perlin.CHUNK_SIZE
