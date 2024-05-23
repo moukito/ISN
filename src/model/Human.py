@@ -31,7 +31,7 @@ class HumanType(Enum):
 class Human(Entity):
     __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "state", "work", "gather_state", "map", "player"]
 
-    CELL_CENTER = Point(Map.CELL_SIZE // 2, Map.CELL_SIZE // 2)
+    CELL_CENTER = Point(Map.CELL_SIZE, Map.CELL_SIZE) // 2
 
     def __init__(self, health, type, capacity, gathering_speed, speed, map, location, player):
         super().__init__(health, {})

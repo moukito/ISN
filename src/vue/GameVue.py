@@ -17,7 +17,7 @@ from model.Saver import Saver
 
 
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "camera_pos", "clicking", "camera_moved", "start_click_pos", "mouse_pos", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -95,7 +95,7 @@ class GameVue(Scene):
 
         self.biomes_textures = {}
         for biome in Biomes:
-            self.biomes_textures[biome] = pygame.transform.scale(pygame.image.load("assets/icons/" + biome.name.lower() + ".jpg").convert_alpha(), (self.cell_pixel_size, self.cell_pixel_size))
+            self.biomes_textures[biome] = pygame.transform.scale(pygame.image.load("assets/icons/" + biome.name.lower() + ".jpg").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
 
         self.ressource_background = pygame.transform.scale(pygame.image.load("assets/ui.png").convert_alpha(), (312, 202))
         self.ressource_background_size = (self.ressource_background.get_width(), self.ressource_background.get_height())
@@ -180,7 +180,7 @@ class GameVue(Scene):
                     self.camera_pos += (self.mouse_pos - pos_point) * (2 / 2.0)
                     self.camera_moved = (self.mouse_pos - pos_point) != Point.origin()
             elif self.building is not None:
-                self.building_moved = (self.mouse_pos - self.building_pos) // self.cell_pixel_size != Point.origin()
+                self.building_moved = (self.mouse_pos - self.building_pos) // Map.CELL_SIZE != Point.origin()
 
                 if self.building_moved:
                     self.building_pos = pos_point
@@ -189,7 +189,7 @@ class GameVue(Scene):
             if event.key == pygame.K_p:
                 if self.building is None:
                     self.building_moved = True
-                    self.building = Farm(Point(int(self.camera_pos.x), int(self.camera_pos.y)) // self.cell_pixel_size, self.player)
+                    self.building = Farm(Point(int(self.camera_pos.x), int(self.camera_pos.y)) // Map.CELL_SIZE, self.player)
 
                     self.building_pos_old = self.building_pos
                     self.building_pos = self.mouse_pos
@@ -244,18 +244,18 @@ class GameVue(Scene):
         camera_chunk_cell = camera_cell % Perlin.CHUNK_SIZE
 
         screen_center = self.screen_size // 2
-        chunk_tl = screen_center - camera_chunk_cell * self.cell_pixel_size
-        chunk_br = chunk_tl + Point(Perlin.CHUNK_SIZE * self.cell_pixel_size, Perlin.CHUNK_SIZE * self.cell_pixel_size) - camera_offset
+        chunk_tl = screen_center - camera_chunk_cell * Map.CELL_SIZE
+        chunk_br = chunk_tl + Point(Perlin.CHUNK_SIZE * Map.CELL_SIZE, Perlin.CHUNK_SIZE * Map.CELL_SIZE) - camera_offset
 
         margin_tl = Point(max(0, chunk_tl.x), max(0, chunk_tl.y))
         margin_br = Point(max(0, self.screen_width - chunk_br.x), max(0, self.screen_height - chunk_br.y))
-        cells_tl = Point(ceil(margin_tl.x / self.cell_pixel_size), ceil(margin_tl.y / self.cell_pixel_size))
-        cells_br = Point(ceil(margin_br.x / self.cell_pixel_size), ceil(margin_br.y / self.cell_pixel_size))
+        cells_tl = Point(ceil(margin_tl.x / Map.CELL_SIZE), ceil(margin_tl.y / Map.CELL_SIZE))
+        cells_br = Point(ceil(margin_br.x / Map.CELL_SIZE), ceil(margin_br.y / Map.CELL_SIZE))
         chunks_tl = Point(ceil(cells_tl.x / Perlin.CHUNK_SIZE), ceil(cells_tl.y / Perlin.CHUNK_SIZE))
         chunks_br = Point(ceil(cells_br.x / Perlin.CHUNK_SIZE), ceil(cells_br.y / Perlin.CHUNK_SIZE))
 
-        cells_tl_signed = Point(chunk_tl.x / self.cell_pixel_size, chunk_tl.y / self.cell_pixel_size)
-        cells_br_signed = Point((self.screen_width - chunk_br.x) / self.cell_pixel_size, (self.screen_height - chunk_br.y) / self.cell_pixel_size)
+        cells_tl_signed = Point(chunk_tl.x / Map.CELL_SIZE, chunk_tl.y / Map.CELL_SIZE)
+        cells_br_signed = Point((self.screen_width - chunk_br.x) / Map.CELL_SIZE, (self.screen_height - chunk_br.y) / Map.CELL_SIZE)
         cells_size = Point(ceil(cells_tl_signed.x + cells_br_signed.x) + Perlin.CHUNK_SIZE, ceil(cells_tl_signed.y + cells_br_signed.y) + Perlin.CHUNK_SIZE)
 
         chunks_size = chunks_br + chunks_tl
@@ -272,7 +272,7 @@ class GameVue(Scene):
             for j in range(0, cells_size.y):
                 x = i + cell_offset.x
                 y = j + cell_offset.y
-                self.screen.blit(self.biomes_textures[Biomes(int(chunks[x][y]))], (i * self.cell_pixel_size - camera_offset.x, j * self.cell_pixel_size - camera_offset.y))
+                self.screen.blit(self.biomes_textures[Biomes(int(chunks[x][y]))], (i * Map.CELL_SIZE - camera_offset.x, j * Map.CELL_SIZE - camera_offset.y))
 
         # RENDER PLACE BUILDING
         if self.building is not None:
@@ -282,8 +282,8 @@ class GameVue(Scene):
 
             relative_center = self.building_pos // Map.CELL_SIZE
             for point in self.building.points:
-                absolute_point = (relative_center + point) * self.cell_pixel_size - camera_offset
-                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + self.building.coords, None) is None else Colors.RED], (absolute_point.x, absolute_point.y, self.cell_pixel_size, self.cell_pixel_size))
+                absolute_point = (relative_center + point) * Map.CELL_SIZE - camera_offset
+                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + self.building.coords, None) is None else Colors.RED], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
 
         if self.selecting:
             self.selected_humans.clear()
