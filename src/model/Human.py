@@ -2,7 +2,7 @@ from enum import Enum
 from math import inf
 
 from model.Entity import Entity
-from model.Structures import StructureType, BuildingType
+from model.Structures import StructureType, BuildingType, oreToRessourceType
 from model.Ressource import RessourceType
 from model.Geometry import Point
 from model.Map import Map
@@ -29,9 +29,9 @@ class HumanType(Enum):
     SOLDIER = 2
 
 class Human(Entity):
-    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "ressource_type", "deposit_speed", "speed", "progression", "state", "work", "gather_state", "map", "player"]
+    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "state", "work", "gather_state", "map", "player"]
 
-    CELL_CENTER = Point(Map.CELL_SIZE, Map.CELL_SIZE)
+    CELL_CENTER = Point(Map.CELL_SIZE // 2, Map.CELL_SIZE // 2)
 
     def __init__(self, health, type, capacity, gathering_speed, speed, map, location, player):
         super().__init__(health, {})
@@ -43,10 +43,11 @@ class Human(Entity):
         self.resource_capacity = capacity
         self.gathering_speed = gathering_speed
         self.ressource_type = None
-        self.deposit_speed = 100
+        self.deposit_speed = 2
         self.speed = speed
         self.progression = 0
         self.going_to_work = False
+        self.going_to_target = False
         self.state = HumanState.IDLE
         self.work = HumanWork.IDLE
         self.gather_state = GatherState.GATHERING
@@ -69,24 +70,37 @@ class Human(Entity):
                 nearest_building = building
                 min_path = path
 
-        return nearest_building, min_path
+        return nearest_building.coords, min_path
 
     def move(self, duration):
         old_progression = self.progression
         self.progression += duration * self.speed
-        self.progression = min(self.progression, len(self.path) - 1)
-        path_start = self.progression // 1
-        path_end = path_end + 1
-        diff = Point(self.path[path_end].position.x - self.path[path_start].position.x, self.path[path_end].position.y - self.path[path_start].position.y) * Map.CELL_SIZE
-        self.current_location = Point(self.path[path_start].position.x * Map.CELL_SIZE, self.path[path_start].position.y * Map.CELL_SIZE) + diff
+        if self.progression < len(self.path) - 1:
+            self.progression = min(self.progression, len(self.path) - 1)
+            path_start = int(self.progression // 1)
+            path_end = path_start + 1
+            diff = (self.path[path_end] - self.path[path_start]) * Map.CELL_SIZE
+            self.current_location = self.path[path_start] * Map.CELL_SIZE + diff * (self.progression % 1)
+        else:
+            self.current_location = self.path[-1] * Map.CELL_SIZE
+            self.progression = len(self.path) - 1
         return 0 if self.progression < len(self.path) - 1 else duration - (len(self.path) - 1 - old_progression) / self.speed
 
     def gather_resources(self, duration):
-        if self.ressources.get(self.ressource_type, None):
+        if self.ressources.get(self.ressource_type, None) is None:
             self.ressources[self.ressource_type] = 0
         old_ressources = self.ressources[self.ressource_type]
         self.ressources[self.ressource_type] = min(self.ressources[self.ressource_type] + duration * self.gathering_speed, self.resource_capacity)
-        return 0 if self.ressources[self.ressource_type] < self.resource_capacity else duration - (self.resource_capacity - old_ressources) / self.gathering_speed
+        duration_left = 0 if self.ressources[self.ressource_type] < self.resource_capacity else duration - (self.resource_capacity - old_ressources) / self.gathering_speed
+        
+        struct =  self.map.occupied_coords.get(self.target_location, None)
+        if struct is None or struct.structure_type == StructureType.ORE:
+            if struct is None or struct.mine((duration - duration_left) * self.gathering_speed):
+                self.gather_state = GatherState.DEPOSITING
+                self.going_to_target = False
+                self.go_to_location(self.building_location)
+            
+        return duration_left
 
     def deposit_resources(self, duration):
         deposit = min(duration * self.deposit_speed, self.ressources[self.ressource_type])
@@ -96,29 +110,48 @@ class Human(Entity):
 
     def set_target_location(self, location):
         self.target_location = location
+        self.go_to_location(self.target_location)
+
+    def go_to_location(self, location):
+        self.progression = 0
         struct = self.map.occupied_coords.get(location, None)
         if struct is None:
             self.state = HumanState.MOVING
             self.work = HumanWork.IDLE
+            self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
         else:
             self.state = HumanState.WORKING
+            self.going_to_work = True
             if struct.structure_type == StructureType.BUILDING:
+                self.going_to_target = False
                 if struct.type == BuildingType.FARM:
                     self.work = HumanWork.GATHERING
                     self.ressource_type = RessourceType.FOOD
-                    self.building_location = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.FARM])
+                    self.going_to_target = True
+                    self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.FARM])
+                    self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
+                else:
+                    self.building_location = location
+                    self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
             elif struct.structure_type == StructureType.ORE:
                 self.work = HumanWork.GATHERING
-                self.ressource_type = struct.type
-                self.building_location = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.MINER_CAMP])
-
+                self.ressource_type = oreToRessourceType[struct.type]
+                self.going_to_target = True
+                self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.MINER_CAMP])
+                self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
 
     def update(self, duration):
+        result = False
         if self.state != HumanState.IDLE:
-            if self.state == HumanState.MOVING:
+            position = self.current_location
+            if self.state == HumanState.MOVING or self.going_to_work:
                 duration = self.move(duration)
-                if duration > 0 and self.work != HumanWork.IDLE:
-                    self.set_target_location(self.target_location if self.going_to_work else self.building_location)
+                if duration > 0:
+                    if self.work != HumanWork.IDLE:
+                        self.going_to_work = False
+                    else:
+                        self.state = HumanState.IDLE
+                        duration = 0
             while duration > 0:
                 if self.state == HumanState.WORKING:
                     if self.work == HumanWork.GATHERING:
@@ -126,24 +159,36 @@ class Human(Entity):
                             duration = self.gather_resources(duration)
                             if duration > 0:
                                 self.gather_state = GatherState.DEPOSITING
-                                self.set_target_location(self.building_location)
+                                self.going_to_target = False
+                                self.go_to_location(self.building_location)
                         else:
+                            # TODO : Fix the deposit of 5 ressources (sometimes not putting 5 ressources in the inventory)
                             duration = self.deposit_resources(duration)
                             if duration > 0:
                                 self.gather_state = GatherState.GATHERING
-                                self.set_target_location(self.target_location)
+                                self.going_to_target = True
+                                self.go_to_location(self.target_location)
                             
                     elif self.work == HumanWork.BUILDING:
                         # Kind of idling ?
-                        pass
+                        duration = 0
                     elif self.work == HumanWork.HUNTING or self.work == HumanWork.FIGHTING:
                         # TODO
-                        pass
+                        duration = 0
                 else:
                     duration = self.move(duration)
                     if duration > 0 and self.work != HumanWork.IDLE:
-                        self.set_target_location(self.target_location if self.going_to_work else self.building_location)
+                        self.go_to_location(self.target_location if self.going_to_target else self.building_location)
+                        self.going_to_work = False
+            result = self.current_location != position
+        return result
+    
+    def stop(self):
+        self.state = HumanState.IDLE
+        self.work = HumanWork.IDLE
+        self.going_to_work = False
+        self.going_to_target = False
 
 class Colonist(Human):
     def __init__(self, map, location, player):
-        super().__init__(100, HumanType.COLONIST, 100, 10, 10, map, location, player)
+        super().__init__(100, HumanType.COLONIST, 5, 1, 2, map, location, player)
