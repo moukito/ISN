@@ -73,7 +73,6 @@ class Ore(Structure):
 
     typeToHealth = {OreType.IRON: 1000, OreType.COPPER: 800, OreType.GOLD: 500, OreType.VULCAN: 200, OreType.CRYSTAL: 300} 
 
-    # TODO : add the removing of health points
     def __init__(self, type, coords, ore_mined_callback, orientation = Orientation.RANDOM) -> None:
         super().__init__(StructureType.ORE, coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
         self.type = type
@@ -124,6 +123,7 @@ class Building(Structure):
 
             if self.building_time != 0 and old_time == 0:
                 self.state = BuildingState.BUILDING
+                # TODO : add a progression bar over the building
 
             if self.building_duration < self.building_time:
                 self.state = BuildingState.BUILT
@@ -131,9 +131,9 @@ class Building(Structure):
         return self.state
 
 class BaseCamp(Building):
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
+    def __init__(self, coords, player) -> None:
         # TODO: add costs when the ressource system is ready
-        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, orientation)
+        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, Orientation.NORTH)
         
 class Pantry(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
@@ -158,3 +158,14 @@ class MinerCamp(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         # TODO: add costs when the ressource system is ready
         super().__init__(None, 550, 0, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+
+
+typeToClass = {
+    BuildingType.BASE_CAMP: BaseCamp,
+    BuildingType.PANTRY: Pantry,
+    BuildingType.FARM: Farm,
+    BuildingType.MINER_CAMP: MinerCamp
+}
+
+def get_class_from_type(structure_type):
+    return typeToClass[structure_type]

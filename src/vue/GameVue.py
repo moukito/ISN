@@ -4,6 +4,7 @@ from time import time, time_ns
 import pygame
 
 from vue.Scene import Scene
+from vue.BuildingChoice import BuildingChoice
 
 from model.Tools import Colors
 from model.Map import Map, Biomes
@@ -11,13 +12,13 @@ from model.Geometry import Point, Rectangle, Circle
 from model.Perlin import Perlin
 from model.Player import Player
 from model.Ressource import RessourceType
-from model.Structures import StructureType, BaseCamp, Farm
-from model.Human import Colonist
+from model.Structures import StructureType, BaseCamp, Farm, get_class_from_type
+from model.Human import Human, Colonist
 from model.Saver import Saver
 
 
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -63,17 +64,10 @@ class GameVue(Scene):
 
         self.load_ressources()
 
-        self.map.place_structure(BaseCamp(Point.origin(), self.player)) # TODO : do that in a cleaner way / Do we keep the orientation as RANDOM?
+        self.building_choice = BuildingChoice(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons)
+        self.building_choice_displayed = False
 
-        # TODO : temporary
-        self.camera_pos = Point(-80, -80)
-        chunk_pos = self.camera_pos // Map.CELL_SIZE // Perlin.CHUNK_SIZE
-        if self.map.chunk_humans.get(chunk_pos, None) is None:
-            self.map.chunk_humans[chunk_pos] = []
-        human = Colonist(self.map, self.camera_pos, self.player)
-        self.map.chunk_humans[chunk_pos].append(human)
-        self.map.humans.append(human)
-        self.frame_render = True
+        self.initialize_camps()
 
         self.clock = pygame.time.Clock()
 
@@ -86,19 +80,18 @@ class GameVue(Scene):
         self.building_pos_old = Point(-1, -1)
 
     def load_ressources(self):
-        self.ressource_font = pygame.font.Font(None, 20)
+        self.ressource_font = pygame.font.Font(None, 20) # TODO : change the font
 
         self.ressource_icons = {}
         for ressource_type in RessourceType:
             self.ressource_icons[ressource_type] = pygame.transform.scale(pygame.image.load("assets/icons/" + ressource_type.name.lower() + ".png").convert_alpha(), (26, 26))
-        #print(self.ressource_icons.keys())
 
         self.biomes_textures = {}
         for biome in Biomes:
             self.biomes_textures[biome] = pygame.transform.scale(pygame.image.load("assets/icons/" + biome.name.lower() + ".jpg").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
 
         self.ressource_background = pygame.transform.scale(pygame.image.load("assets/ui.png").convert_alpha(), (312, 202))
-        self.ressource_background_size = (self.ressource_background.get_width(), self.ressource_background.get_height())
+        self.ressource_background_size = Point(self.ressource_background.get_width(), self.ressource_background.get_height())
         #self.ressource_background = pygame.image.load("assets/ui.png").convert_alpha()
 
         self.colors = {
@@ -114,7 +107,16 @@ class GameVue(Scene):
         }
 
     def handle_events(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        # TODO : reverse right and left click from selecting and moving the camera
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_point = Point(mouse_pos[0], mouse_pos[1])
+        if self.building_choice_displayed and self.building_choice.rect.containsPoint(mouse_point):
+            result = self.building_choice.event_stream(event)
+            if result is not None:
+                self.building = get_class_from_type(result)(self.camera_pos // Map.CELL_SIZE, self.player)
+                self.building_choice_displayed = False
+            self.frame_render = True
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             pressed_mouse_buttons = pygame.mouse.get_pressed()
             if pressed_mouse_buttons[2]:
                 self.selecting = True
@@ -177,7 +179,7 @@ class GameVue(Scene):
                 if not self.moving and self.start_click_pos.distance(pos_point) > 10:
                     self.moving = True 
                 elif self.moving:
-                    self.camera_pos += (self.mouse_pos - pos_point) * (2 / 2.0)
+                    self.camera_pos += (self.mouse_pos - pos_point) * (2.8 / 2.0)
                     self.camera_moved = (self.mouse_pos - pos_point) != Point.origin()
             elif self.building is not None:
                 self.building_moved = (self.mouse_pos - self.building_pos) // Map.CELL_SIZE != Point.origin()
@@ -206,7 +208,10 @@ class GameVue(Scene):
                 self.map.chunk_humans[chunk_pos].append(human)
                 self.map.humans.append(human)
                 self.frame_render = True
-            elif event.key == pygame.K_ESCAPE:
+            if event.key == pygame.K_b:
+                self.building_choice_displayed = not self.building_choice_displayed
+                self.frame_render = True
+            if event.key == pygame.K_ESCAPE:
                 self.running = False
 
     def update(self):
@@ -230,6 +235,10 @@ class GameVue(Scene):
                 self.building_moved = False
 
             self.render_selection()
+            
+            if self.building_choice_displayed:
+                self.building_choice.render()
+
             self.render_interface()
 
         #print(self.clock.get_fps())
@@ -291,7 +300,7 @@ class GameVue(Scene):
         else:
             ids = [id(h) for h in self.selected_humans]
 
-        # RENDER STRUCTURES AND HUMANS
+        # RENDER STRUCTURES
         # TODO : fix the offset
         for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
             for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
@@ -303,6 +312,10 @@ class GameVue(Scene):
                             absolute_point = (point - camera_cell) * Map.CELL_SIZE + screen_center - camera_offset
                             pygame.draw.rect(self.screen, self.colors[Colors.BLACK if struct.structure_type == StructureType.BUILDING else Colors.BLUE], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
                 
+        # RENDER HUMANS
+        # TODO : fix the offset
+        for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
+            for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
                 actual_chunk_humans = self.map.chunk_humans.get(Point(x, y), None)
                 if actual_chunk_humans is not None:
                     for human in actual_chunk_humans:
@@ -333,7 +346,7 @@ class GameVue(Scene):
             icon = self.ressource_icons.get(ressource_type, None)
             ressource_icons_texts[ressource_type] = (icon, text)
 
-        offset = self.screen_height - self.ressource_background_size[1]
+        offset = self.screen_height - self.ressource_background_size.y
 
         self.screen.blit(self.ressource_background, (0, offset))
 
@@ -357,3 +370,11 @@ class GameVue(Scene):
 
     def ressource_update_callback(self):
         self.frame_render = True
+
+    def initialize_camps(self):
+        self.map.place_structure(BaseCamp(Point.origin(), self.player))
+        for point in [Point(-3, 1), Point(-3, 2), Point(-3, 3), Point(-2, 3), Point(-1, 3)]:
+            postion = point * Map.CELL_SIZE + Human.CELL_CENTER
+            human = Colonist(self.map, postion, self.player)
+            self.map.place_human(human, postion)
+            self.frame_render = True

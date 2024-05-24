@@ -151,6 +151,13 @@ class Map:
 
         return can_place
     
+    def place_human(self, human, map_position):
+        chunk_pos = map_position // Map.CELL_SIZE // Perlin.CHUNK_SIZE
+        if self.chunk_humans.get(chunk_pos, None) is None:
+            self.chunk_humans[chunk_pos] = []
+        self.chunk_humans[chunk_pos].append(human)
+        self.humans.append(human)
+    
     def ore_mined_callback(self, ore):
         try:
             self.ores[ore.coords // Perlin.CHUNK_SIZE][ore.type].remove(ore.coords)
