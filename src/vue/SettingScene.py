@@ -1,5 +1,6 @@
 import pygame
 
+from vue.Core import Core
 from vue.Button import Button
 from vue.Scene import Scene
 from vue.Select import Select
@@ -22,7 +23,19 @@ class SettingsScene(Scene):
         change_resolution(): Changes the game resolution.
     """
 
-    def __init__(self, core, parent_render):
+    __slots__ = [
+        "opacity",
+        "scale",
+        "volume",
+        "resolution",
+        "volume_slider",
+        "resolution_menu",
+        "apply_button",
+        "cancel_button",
+        "parent_render",
+    ]
+
+    def __init__(self, core: Core, parent_render: callable) -> None:
         """
         Initializes the SettingsScene instance with the screen.
 
@@ -75,7 +88,10 @@ class SettingsScene(Scene):
             font_size,
         )
 
-    def handle_events(self, event: pygame.event.Event):
+    def __del__(self) -> None:
+        self.fade_out()
+
+    def handle_events(self, event: pygame.event.Event) -> None:
         """
         Handles events specific to the settings screen.
         """
@@ -104,7 +120,7 @@ class SettingsScene(Scene):
         if event.type == pygame.QUIT:
             pygame.event.post(pygame.event.Event(self.event, {"scene": "quit"}))
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the settings screen.
         """
@@ -116,38 +132,23 @@ class SettingsScene(Scene):
         if self.scale < 0.9:
             self.scale += 0.1
 
-    def render(self):
+    def render(self) -> None:
         """
         Renders the settings screen.
         """
-        self.parent_render()
+        window = pygame.Surface(self.screen.get_width, self.screen.get_height)
+        window.fill((0, 0, 0))
 
-        self.screen.blit(self.opacity, (0, 0))
-
-        volume_text = pygame.font.Font(None, 36).render(
-            f"Volume: {self.volume}", 1, (255, 255, 255)
-        )
-        self.volume_slider.render(self.screen)
-
-        resolution_text = pygame.font.Font(None, 36).render(
-            f"Resolution: {self.resolution}", 1, (255, 255, 255)
-        )
-        self.resolution_menu.render(self.screen)
-
-        self.screen.blit(volume_text, (20, 20))
-        self.screen.blit(resolution_text, (20, 60))
-
-        self.apply_button.render(self.screen)
-        self.cancel_button.render(self.screen)
+        self.render_parameter(window)
 
         scaled_screen = pygame.transform.scale(
-            self.screen,
+            window,
             (
                 int(self.screen.get_width() * self.scale),
                 int(self.screen.get_height() * self.scale),
             ),
         )  # Scale the screen
-
+        # TODO : refactor render and test new fade in
         self.parent_render()
         self.screen.blit(
             scaled_screen,
@@ -157,8 +158,39 @@ class SettingsScene(Scene):
             ),
         )  # Draw the scaled screen onto the original screen
 
+    def render_parameter(self, screen: pygame.Surface) -> None:
+        screen.blit(self.opacity, (0, 0))
+        volume_text = pygame.font.Font(None, 36).render(
+            f"Volume: {self.volume}", 1, (255, 255, 255)
+        )
+        self.volume_slider.render(screen)
+        resolution_text = pygame.font.Font(None, 36).render(
+            f"Resolution: {self.resolution}", 1, (255, 255, 255)
+        )
+        self.resolution_menu.render(screen)
+        screen.blit(volume_text, (20, 20))
+        screen.blit(resolution_text, (20, 60))
+        self.apply_button.render(screen)
+        self.cancel_button.render(screen)
+
+    def fade_out(self) -> None:
+        fade_surface = pygame.Surface(
+            (self.screen.get_width(), self.screen.get_height())
+        )  # Create a new surface
+        fade_surface.fill((0, 0, 0))  # Fill the surface with black color
+
+        for alpha in range(0, 300):
+            fade_surface.set_alpha(alpha)  # Set the alpha value
+            self.render()  # Render the scene
+            self.screen.blit(
+                fade_surface, (0, 0)
+            )  # Blit the fade surface onto the screen
+            pygame.display.update()  # Update the display
+            pygame.time.delay(5)  # Delay to create the fade-out effect
+        # TODO : test fade out
+
     @staticmethod
-    def change_button_color(button, hovered):
+    def change_button_color(button: Button, hovered: bool) -> None:
         """
         Changes the color of the button when hovered.
 
