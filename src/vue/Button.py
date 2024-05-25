@@ -27,6 +27,6 @@ class Button:
         return self.width, self.height
 
     def is_hovered(self, event):
-        if event.type == pygame.MOUSEMOTION:
+        if event.type == pygame.MOUSEMOTION or event.type == pygame.MOUSEBUTTONUP:
             mouse_pos = pygame.mouse.get_pos()
             return self.x <= mouse_pos[0] <= self.x + self.width and self.y <= mouse_pos[1] <= self.y + self.height

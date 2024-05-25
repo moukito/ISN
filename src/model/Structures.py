@@ -6,8 +6,9 @@ from model.Ressource import RessourceType
 from model.Player import Player
 
 class StructureType(Enum):
-    ORE = 1
-    BUILDING = 2
+    TREE = 1
+    ORE = 2
+    BUILDING = 3
 
 class Orientation(Enum):
     RANDOM = 0
@@ -52,15 +53,39 @@ class Structure:
         old_orientation = self.orientation
         self.set_orientation(orientation)
         self.rotate((old_orientation - self.orientation) % 4)
+    
+class Tree(Structure):
+    __slots__ = ["health", "tree_choped_callback"]
+
+    def __init__(self, coords, tree_choped_callback, orientation = Orientation.RANDOM) -> None:
+        super().__init__(StructureType.TREE, coords, [Point(-1, -1), Point(0, -1), Point(-1, 0), Point(0, 0)], orientation)
+        self.health = 200
+        self.tree_choped_callback = tree_choped_callback
+
+    def chop_down(self, quantity):
+        self.health -= quantity
+        if self.health <= 0:
+            self.tree_choped_callback(self)
+            return True
+        return False
+    
+class TypedStructure(Structure):
+    __slots__ = ["type"]
+
+    def __init__(self, type, structure_type, coords, points, orientation = Orientation.RANDOM) -> None:
+        super().__init__(structure_type, coords, points, orientation)
+        self.type = type
 
 class OreType(Enum):
-    IRON = 1
-    COPPER = 2
-    GOLD = 3
-    VULCAN = 4
-    CRYSTAL = 5
+    STONE = 1
+    IRON = 2
+    COPPER = 3
+    GOLD = 4
+    VULCAN = 5
+    CRYSTAL = 6
 
 oreToRessourceType = {
+    OreType.STONE: RessourceType.STONE,
     OreType.IRON: RessourceType.IRON,
     OreType.COPPER: RessourceType.COPPER,
     OreType.GOLD: RessourceType.GOLD,
@@ -68,15 +93,13 @@ oreToRessourceType = {
     OreType.CRYSTAL: RessourceType.CRYSTAL
 }
 
-class Ore(Structure):
-    __slots__ = ["type", "health", "ore_mined_callback"]
+class Ore(TypedStructure):
+    __slots__ = ["health", "ore_mined_callback"]
 
-    typeToHealth = {OreType.IRON: 1000, OreType.COPPER: 800, OreType.GOLD: 500, OreType.VULCAN: 200, OreType.CRYSTAL: 300} 
+    typeToHealth = {OreType.STONE: 500, OreType.IRON: 1000, OreType.COPPER: 800, OreType.GOLD: 500, OreType.VULCAN: 200, OreType.CRYSTAL: 300} 
 
-    # TODO : add the removing of health points
     def __init__(self, type, coords, ore_mined_callback, orientation = Orientation.RANDOM) -> None:
-        super().__init__(StructureType.ORE, coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
-        self.type = type
+        super().__init__(type, StructureType.ORE, coords, [Point(-1, -1), Point(0, -1), Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0), Point(-2, 1), Point(-1, 1), Point(0, 1), Point(1, 1), Point(-1, 2)], orientation)
         self.health = self.typeToHealth[type]
         self.ore_mined_callback = ore_mined_callback
 
@@ -91,25 +114,24 @@ class BuildingType(Enum):
     BASE_CAMP = 1
     PANTRY = 2
     FARM = 3
-    MINER_CAMP = 4
+    LUMBER_CAMP = 4
+    MINER_CAMP = 5
 
 class BuildingState(Enum):
     PLACED = 0
     BUILDING = 1
     BUILT = 2
 
-# TODO: maybe create a class 'TypedStructure' inheriting of 'Structure' to add the type attribute instead of adding it to every subclass of Structure?
-class Building(Structure):
-    __slots__ = ["type", "costs", "health", "building_duration", "building_time", "workers", "state", "player"]
+class Building(TypedStructure):
+    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player"]
 
     def __init__(self, costs, health, building_duration, type, coords, points, player, orientation=Orientation.RANDOM) -> None:
-        super().__init__(StructureType.BUILDING, coords, points, orientation)
+        super().__init__(type, StructureType.BUILDING, coords, points, orientation)
         self.costs = costs
         self.health = health
         self.building_duration = building_duration
         self.building_time = 0
         self.workers = 0
-        self.type = type
         self.player = player
         self.state = BuildingState.PLACED
 
@@ -124,6 +146,7 @@ class Building(Structure):
 
             if self.building_time != 0 and old_time == 0:
                 self.state = BuildingState.BUILDING
+                # TODO : add a progression bar over the building
 
             if self.building_duration < self.building_time:
                 self.state = BuildingState.BUILT
@@ -131,21 +154,18 @@ class Building(Structure):
         return self.state
 
 class BaseCamp(Building):
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        # TODO: add costs when the ressource system is ready
-        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, orientation)
+    def __init__(self, coords, player) -> None:
+        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, Orientation.NORTH)
         
 class Pantry(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        # TODO: add costs when the ressource system is ready
-        super().__init__(None, 550, 1 * 60, BuildingType.PANTRY, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+        super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 1 * 60, BuildingType.PANTRY, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
 
 class Farm(Building):
     __slots__ = ["food"]
 
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        # TODO: add costs when the ressource system is ready
-        super().__init__(None, 300, 0.5 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+        super().__init__({RessourceType.WOOD: 50}, 300, 0.5 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
 
     def update(self, duration):
         state = super().update(duration)
@@ -156,5 +176,15 @@ class Farm(Building):
     
 class MinerCamp(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        # TODO: add costs when the ressource system is ready
-        super().__init__(None, 550, 0, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+        super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 0, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+
+
+typeToClass = {
+    BuildingType.BASE_CAMP: BaseCamp,
+    BuildingType.PANTRY: Pantry,
+    BuildingType.FARM: Farm,
+    BuildingType.MINER_CAMP: MinerCamp
+}
+
+def get_class_from_type(structure_type):
+    return typeToClass[structure_type]

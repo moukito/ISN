@@ -79,10 +79,10 @@ class Human(Entity):
             self.progression = min(self.progression, len(self.path) - 1)
             path_start = int(self.progression // 1)
             path_end = path_start + 1
-            diff = (self.path[path_end] - self.path[path_start]) * Map.CELL_SIZE
-            self.current_location = self.path[path_start] * Map.CELL_SIZE + diff * (self.progression % 1)
+            diff = (self.path[path_end] - self.path[path_start])
+            self.current_location = self.path[path_start] + diff * (self.progression % 1)
         else:
-            self.current_location = self.path[-1] * Map.CELL_SIZE
+            self.current_location = self.path[-1]
             self.progression = len(self.path) - 1
         return 0 if self.progression < len(self.path) - 1 else duration - (len(self.path) - 1 - old_progression) / self.speed
 
@@ -94,8 +94,15 @@ class Human(Entity):
         duration_left = 0 if self.ressources[self.ressource_type] < self.resource_capacity else duration - (self.resource_capacity - old_ressources) / self.gathering_speed
         
         struct =  self.map.occupied_coords.get(self.target_location, None)
-        if struct is None or struct.structure_type == StructureType.ORE:
-            if struct is None or struct.mine((duration - duration_left) * self.gathering_speed):
+        if struct is None or struct.structure_type == StructureType.ORE or struct.structure_type == StructureType.TREE:
+            struct_destroyed = False
+            if struct is not None:
+                if struct.structure_type == StructureType.ORE:
+                    struct_destroyed = struct.mine((duration - duration_left) * self.gathering_speed)
+                else:
+                    struct_destroyed = struct.chop_down((duration - duration_left) * self.gathering_speed)
+                    
+            if struct is None or struct_destroyed:
                 self.gather_state = GatherState.DEPOSITING
                 self.going_to_target = False
                 self.go_to_location(self.building_location)
@@ -130,15 +137,29 @@ class Human(Entity):
                     self.going_to_target = True
                     self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.FARM])
                     self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
+                    if len(self.path) > 1:
+                        self.path[0] = self.current_location
                 else:
                     self.building_location = location
                     self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
+                    if len(self.path) > 1:
+                        self.path[0] = self.current_location
             elif struct.structure_type == StructureType.ORE:
                 self.work = HumanWork.GATHERING
                 self.ressource_type = oreToRessourceType[struct.type]
                 self.going_to_target = True
                 self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.MINER_CAMP])
                 self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
+                if len(self.path) > 1:
+                    self.path[0] = self.current_location
+            elif struct.structure_type == StructureType.TREE:
+                self.work = HumanWork.GATHERING
+                self.ressource_type = RessourceType.WOOD
+                self.going_to_target = True
+                self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.LUMBER_CAMP])
+                self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
+                if len(self.path) > 1:
+                    self.path[0] = self.current_location
 
     def update(self, duration):
         result = False

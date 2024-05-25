@@ -5,8 +5,8 @@ class Player:
 
     def __init__(self, ressource_update_callback) -> None:
         self.ressources = {
-            RessourceType.FOOD: 0,
-            RessourceType.WOOD: 0,
+            RessourceType.FOOD: 200,
+            RessourceType.WOOD: 150,
             RessourceType.STONE: 0,
             RessourceType.GOLD: 0, 
             RessourceType.COPPER: 0, 
