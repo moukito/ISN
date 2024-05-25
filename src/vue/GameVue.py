@@ -16,6 +16,7 @@ from model.Structures import StructureType, BaseCamp, Farm, get_class_from_type
 from model.Human import Human, Colonist
 from model.Saver import Saver
 
+# TODO: refactorize this code
 
 class GameVue(Scene):
     __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed"]
@@ -33,8 +34,6 @@ class GameVue(Scene):
         self.building_pos = None
         self.building = None
         self.building_moved = None
-
-        self.saver = Saver()
 
         self.player = Player(self.ressource_update_callback)
 
@@ -72,6 +71,8 @@ class GameVue(Scene):
         self.clock = pygame.time.Clock()
 
         self.last_timestamp = time_ns()
+
+        self.saver = Saver(self)
 
     def reset_building(self):
         self.building_moved = False
@@ -125,8 +126,8 @@ class GameVue(Scene):
                 self.select_start = Point(pos[0], pos[1])
                 self.select_end = self.select_start
             elif pressed_mouse_buttons[0]:
+                self.clicking = True
                 if self.building is None:
-                    self.clicking = True
                     pos = pygame.mouse.get_pos()
                     self.mouse_pos = self.start_click_pos = Point(pos[0], pos[1])
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -158,9 +159,12 @@ class GameVue(Scene):
                         self.moving = False
                     else:
                         self.building.coords = (self.building_pos + Point(int(self.camera_pos.x), int(self.camera_pos.y)) - self.screen_size // 2) // Map.CELL_SIZE
-                        result = self.map.place_structure(self.building)
-                        if result:
+                        if self.map.place_structure(self.building):
+                            for ressource_type, ressource_number in self.building.costs.items():
+                                self.player.add_ressource(ressource_type, -ressource_number)
                             self.reset_building()
+                            self.clicking = False
+                            self.frame_render = True
             elif not pressed_mouse_buttons[2] and self.selecting:
                 self.frame_render = True
                 self.selecting = False
@@ -188,18 +192,8 @@ class GameVue(Scene):
                     self.building_pos = pos_point
             self.mouse_pos = pos_point
         elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_p:
-                if self.building is None:
-                    self.building_moved = True
-                    self.building = Farm(Point(int(self.camera_pos.x), int(self.camera_pos.y)) // Map.CELL_SIZE, self.player)
-
-                    self.building_pos_old = self.building_pos
-                    self.building_pos = self.mouse_pos
-                else:
-                    self.reset_building()
-                    self.building_moved = True
             if event.key == pygame.K_s:
-                self.saver.save_map(self.map)
+                self.saver.save()
             if event.key == pygame.K_h: # TODO : temporary
                 chunk_pos = self.camera_pos // Map.CELL_SIZE // Perlin.CHUNK_SIZE
                 if self.map.chunk_humans.get(chunk_pos, None) is None:
@@ -212,7 +206,8 @@ class GameVue(Scene):
                 self.building_choice_displayed = not self.building_choice_displayed
                 self.frame_render = True
             if event.key == pygame.K_ESCAPE:
-                self.running = False
+                self.reset_building()
+                self.frame_render = True
 
     def update(self):
         timestamp = time_ns()
@@ -253,6 +248,8 @@ class GameVue(Scene):
         camera_chunk_cell = camera_cell % Perlin.CHUNK_SIZE
 
         screen_center = self.screen_size // 2
+        screen_center_cell = screen_center // Map.CELL_SIZE
+        screen_center_rounded = screen_center_cell * Map.CELL_SIZE
         chunk_tl = screen_center - camera_chunk_cell * Map.CELL_SIZE
         chunk_br = chunk_tl + Point(Perlin.CHUNK_SIZE * Map.CELL_SIZE, Perlin.CHUNK_SIZE * Map.CELL_SIZE) - camera_offset
 
@@ -283,6 +280,17 @@ class GameVue(Scene):
                 y = j + cell_offset.y
                 self.screen.blit(self.biomes_textures[Biomes(int(chunks[x][y]))], (i * Map.CELL_SIZE - camera_offset.x, j * Map.CELL_SIZE - camera_offset.y))
 
+        # RENDER STRUCTURES
+        for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
+            for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
+                actual_chunk_occupied_coords = self.map.chunk_occupied_coords.get(Point(x, y), None)
+                if actual_chunk_occupied_coords is not None:
+                    for point in actual_chunk_occupied_coords:
+                        struct = self.map.occupied_coords.get(point, None)
+                        if struct is not None:
+                            absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
+                            pygame.draw.rect(self.screen, self.colors[Colors.BLACK if struct.structure_type == StructureType.BUILDING else Colors.BLUE], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
+
         # RENDER PLACE BUILDING
         if self.building is not None:
             if self.building_pos_old != Point(-1, -1):
@@ -292,25 +300,13 @@ class GameVue(Scene):
             relative_center = self.building_pos // Map.CELL_SIZE
             for point in self.building.points:
                 absolute_point = (relative_center + point) * Map.CELL_SIZE - camera_offset
-                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + self.building.coords, None) is None else Colors.RED], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
+                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + relative_center - screen_center_cell + camera_cell, None) is None else Colors.RED], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
 
         if self.selecting:
             self.selected_humans.clear()
             selection_rect = Rectangle.fromPoints(self.select_start, self.select_end)
         else:
             ids = [id(h) for h in self.selected_humans]
-
-        # RENDER STRUCTURES
-        # TODO : fix the offset
-        for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
-            for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
-                actual_chunk_occupied_coords = self.map.chunk_occupied_coords.get(Point(x, y), None)
-                if actual_chunk_occupied_coords is not None:
-                    for point in actual_chunk_occupied_coords:
-                        struct = self.map.occupied_coords.get(point, None)
-                        if struct is not None:
-                            absolute_point = (point - camera_cell) * Map.CELL_SIZE + screen_center - camera_offset
-                            pygame.draw.rect(self.screen, self.colors[Colors.BLACK if struct.structure_type == StructureType.BUILDING else Colors.BLUE], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
                 
         # RENDER HUMANS
         # TODO : fix the offset
@@ -319,7 +315,7 @@ class GameVue(Scene):
                 actual_chunk_humans = self.map.chunk_humans.get(Point(x, y), None)
                 if actual_chunk_humans is not None:
                     for human in actual_chunk_humans:
-                        absolute_point = human.current_location - camera_cell * Map.CELL_SIZE + screen_center - camera_offset
+                        absolute_point = human.current_location - camera_pos + screen_center_rounded
 
                         if self.selecting:
                             selected = selection_rect.containsPoint(absolute_point)

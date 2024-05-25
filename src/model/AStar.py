@@ -1,4 +1,5 @@
 from model.Geometry import Point
+from model.Map import Map
 
 class Node:
     def __init__(self, position, parent=None):
@@ -7,6 +8,8 @@ class Node:
         self.g = 0
         self.h = 0
         self.f = 0
+
+CELL_CENTER = Point(Map.CELL_SIZE, Map.CELL_SIZE) // 2
 
 def AStar(start, end, map):
     open_list = []
@@ -33,7 +36,7 @@ def AStar(start, end, map):
             path = []
             current = current_node
             while current is not None:
-                path.append(current.position)
+                path.append(current.position * Map.CELL_SIZE + CELL_CENTER)
                 current = current.parent
             return path[::-1]
 

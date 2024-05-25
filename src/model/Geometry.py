@@ -152,8 +152,8 @@ class Polygon:
             dx2 = point[0] - self.points[i][0]
             dy2 = point[1] - self.points[i][1]
 
-            f = (dx - dx2) * dy - dx * (dy - dy2)
-            if f == 0.0 and dx * dx2 <= 0:# and dy * dy2 <= 0:
+            f = dx * dy2 - dy * dx2 #f = (dx - dx2) * dy - dx * (dy - dy2)
+            if f == 0.0 and dx * dx2 <= 0: # and dy * dy2 <= 0:
                 contained = True
             elif (dy>=0 and dy2<0) or (dy2>=0 and dy<0):
                 if f > 0:
