@@ -6,16 +6,19 @@ from model.Structures import Structure, OreType, Building
 from model.Geometry import Point
 
 class Saver:
-    def __init__(self) -> None:
-        pass
+    __slots__ = ["game_vue"]
 
-    def save_map(self, map):
+    def __init__(self, game_vue) -> None:
+        self.game_vue = game_vue
+
+    def save(self):
+        map = self.game_vue.map
         signature = [77, 65, 80, 00] # 'MAP_' in ASCII
         with open('map.exd', 'wb') as f:
             for b in signature:
                 f.write(struct.pack('B', b))
             
-            f.write(struct.pack('i', map.perlin.seed))
+            f.write(struct.pack('i', map.perlin_temperature.seed))
             
             f.write(struct.pack('i', len(map.ores)))
             for chunk_coords, ores in map.ores.items():
@@ -32,22 +35,22 @@ class Saver:
                 f.write(struct.pack('ii', chunk_coords.x, chunk_coords.y))
                 f.write(struct.pack('i', len(structures)))
                 for structure in structures:
-                    f.write(struct.pack('i', structure.structure_type))
-                    f.write(struct.pack('ii', structure.position.x, structure.position.y))
+                    f.write(struct.pack('i', structure.structure_type.value))
+                    f.write(struct.pack('ii', structure.coords.x, structure.coords.y))
                     f.write(struct.pack('i', len(structure.points)))
                     for point in structure.points:
                         f.write(struct.pack('ii', point.x, point.y))
 
             f.write(struct.pack('i', len(map.buildings)))
             for building in map.buildings:
-                f.write(struct.pack('ii', building.position.x, building.position.y))
+                f.write(struct.pack('ii', building.coords.x, building.coords.y))
                 f.write(struct.pack('i', len(building.points)))
                 for point in building.points:
                     f.write(struct.pack('ii', point.x, point.y))
             
             f.write(struct.pack('i', Perlin.CHUNK_SIZE))
-            f.write(struct.pack('i', len(map.perlin.chunks)))
-            for chunk_coords, chunk in map.perlin.chunks.items():
+            f.write(struct.pack('i', len(map.perlin_temperature.chunks)))
+            for chunk_coords, chunk in map.perlin_temperature.chunks.items():
                 f.write(struct.pack('ii', chunk_coords[0], chunk_coords[1]))
                 f.write(struct.pack('i', len(chunk)))
                 for row in chunk[0]:
