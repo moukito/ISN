@@ -4,8 +4,8 @@ import subprocess
 
 import pygame
 
-from vue.GameTitle import GameTitle
-from vue.GameVue import GameVue
+from src.vue.GameTitle import GameTitle
+from src.vue.GameVue import GameVue
 
 
 class Core:
