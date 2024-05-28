@@ -1,4 +1,5 @@
 from enum import Enum
+from math import inf
 import random
 
 from model.Geometry import Point, Rectangle
@@ -58,7 +59,7 @@ class Tree(Structure):
     __slots__ = ["health", "tree_choped_callback"]
 
     def __init__(self, coords, tree_choped_callback, orientation = Orientation.RANDOM) -> None:
-        super().__init__(StructureType.TREE, coords, [Point(-1, -1), Point(0, -1), Point(-1, 0), Point(0, 0)], orientation)
+        super().__init__(StructureType.TREE, coords, Rectangle(-1, -1, 1, 1).toPointList(), orientation)
         self.health = 200
         self.tree_choped_callback = tree_choped_callback
 
@@ -124,7 +125,7 @@ class BuildingState(Enum):
     BUILT = 2
 
 class Building(TypedStructure):
-    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player"]
+    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player", "upper_left", "rect_size"]
 
     def __init__(self, costs, health, building_duration, type, coords, points, player, orientation=Orientation.RANDOM) -> None:
         super().__init__(type, StructureType.BUILDING, coords, points, orientation)
@@ -135,6 +136,23 @@ class Building(TypedStructure):
         self.workers = 0
         self.player = player
         self.state = BuildingState.PLACED
+
+        min = Point(+inf, +inf)
+        max = Point(-inf, -inf)
+        self.upper_left = Point(+inf, +inf)
+        for point in points:
+            if point.x < min.x:
+                min.x = point.x
+            elif point.x > max.x:
+                max.x = point.x
+            if point.y < min.y:
+                min.y = point.y
+            elif point.y > max.y:
+                max.y = point.y
+        # TODO: Maybe put that in a class attribute (instead of doing it for each building) 
+        self.upper_left = Point(min.x, min.y)
+        self.rect_size = Point(max.x - min.x + 1, max.y - min.y + 1)
+
 
     def addWorkers(self, workers_number):
         self.workers += workers_number
