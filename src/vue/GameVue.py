@@ -12,14 +12,14 @@ from model.Geometry import Point, Rectangle, Circle
 from model.Perlin import Perlin
 from model.Player import Player
 from model.Ressource import RessourceType
-from model.Structures import StructureType, BaseCamp, Farm, get_class_from_type
+from model.Structures import StructureType, BuildingType, OreType, BaseCamp, Farm, get_class_from_type
 from model.Human import Human, Colonist
 from model.Saver import Saver
 
 # TODO: refactorize this code
 
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "ressource_background", "ressource_background_size", "biomes_textures", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -29,6 +29,10 @@ class GameVue(Scene):
         self.ressource_background = None
         self.biomes_textures = None
         self.ressource_icons = None
+        self.tree_texture = None
+        self.ore_textures = None
+        self.building_textures = None
+        self.missing_texture = None
         self.ressource_font = None
         self.building_pos_old = None
         self.building_pos = None
@@ -90,6 +94,25 @@ class GameVue(Scene):
         self.biomes_textures = {}
         for biome in Biomes:
             self.biomes_textures[biome] = pygame.transform.scale(pygame.image.load("assets/icons/" + biome.name.lower() + ".jpg").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
+
+        self.tree_texture = pygame.transform.scale(pygame.image.load("assets/Textures/Tree.png").convert_alpha(), (Map.CELL_SIZE * 3, Map.CELL_SIZE * 3))
+
+        self.building_textures = {}
+        for building in BuildingType:
+            try:
+                building_struct = get_class_from_type(building)(Point(0, 0), self.player)
+                self.building_textures[building] = pygame.transform.scale(pygame.image.load("assets/Textures/Buildings/" + building.name.lower() + ".png").convert_alpha(), (building_struct.rect_size.x * Map.CELL_SIZE, building_struct.rect_size.y * Map.CELL_SIZE))
+            except Exception:
+                self.building_textures[building] = None
+
+        self.ore_textures = {}
+        for ore in OreType:
+            try:
+                self.ore_textures[ore] = pygame.transform.scale(pygame.image.load("assets/Textures/Ores/" + ore.name.lower() + ".png").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
+            except Exception:
+                self.ore_textures[ore] = None
+
+        self.missing_texture = pygame.transform.scale(pygame.image.load("assets/Textures/missing.png").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
 
         self.ressource_background = pygame.transform.scale(pygame.image.load("assets/ui.png").convert_alpha(), (312, 202))
         self.ressource_background_size = Point(self.ressource_background.get_width(), self.ressource_background.get_height())
@@ -281,6 +304,8 @@ class GameVue(Scene):
                 self.screen.blit(self.biomes_textures[Biomes(int(chunks[x][y]))], (i * Map.CELL_SIZE - camera_offset.x, j * Map.CELL_SIZE - camera_offset.y))
 
         # RENDER STRUCTURES
+        shown_trees = {}
+        shown_buildings = {}
         for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
             for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
                 actual_chunk_occupied_coords = self.map.chunk_occupied_coords.get(Point(x, y), None)
@@ -288,8 +313,17 @@ class GameVue(Scene):
                     for point in actual_chunk_occupied_coords:
                         struct = self.map.occupied_coords.get(point, None)
                         if struct is not None:
-                            absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
-                            pygame.draw.rect(self.screen, self.colors[Colors.BLACK if struct.structure_type == StructureType.BUILDING else Colors.BLUE], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
+                            if struct.structure_type == StructureType.BUILDING and shown_buildings.get(struct, None) is None:
+                                absolute_point = (struct.coords + struct.upper_left) * Map.CELL_SIZE - camera_pos + screen_center_rounded
+                                self.screen.blit(self.building_textures[struct.type] if self.building_textures.get(struct.type, None) != None else self.missing_texture, (absolute_point.x, absolute_point.y))
+                                shown_buildings[struct] = True
+                            elif struct.structure_type == StructureType.ORE:
+                                absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
+                                self.screen.blit(self.ore_textures[struct.type] if self.ore_textures.get(struct.type, None) != None else self.missing_texture, (absolute_point.x, absolute_point.y))
+                            elif struct.structure_type == StructureType.TREE and shown_trees.get(struct, None) is None:
+                                absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
+                                self.screen.blit(self.tree_texture, (absolute_point.x, absolute_point.y))
+                                shown_trees[struct] = True
 
         # RENDER PLACE BUILDING
         if self.building is not None:

@@ -90,7 +90,7 @@ class BuildingChoice:
                 if enough_ressources:
                     result = building_type
                 
-                button.color = (195, 195, 195)
+                button.color = (110, 126, 180)
             if button.is_hovered(event):
                 button.color = (92, 104, 155)
             elif not clicked:
