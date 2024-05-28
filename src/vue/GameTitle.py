@@ -8,24 +8,24 @@ from vue.SettingScene import SettingsScene
 
 class GameTitle(Scene):
     """
-        Represents the title screen of the game.
-        Inherits from the Scene class.
+    Represents the title screen of the game.
+    Inherits from the Scene class.
 
-        Methods:
-            __init__(screen): Initializes the GameTitle instance with the screen.
-            handle_events(): Handles events specific to the title screen.
-            update(): Updates the title screen.
-            render(): Renders the title screen.
+    Methods:
+        __init__(screen): Initializes the GameTitle instance with the screen.
+        handle_events(): Handles events specific to the title screen.
+        update(): Updates the title screen.
+        render(): Renders the title screen.
     """
 
     __slots__ = ["bg", "choice", "options", "font", "buttons"]
 
     def __init__(self, core):
         """
-            Initializes the GameTitle instance with the screen.
+        Initializes the GameTitle instance with the screen.
 
-            Parameters:
-                screen (pygame.Surface): The surface to render the title screen on.
+        Parameters:
+            screen (pygame.Surface): The surface to render the title screen on.
         """
         super().__init__(core)
 
@@ -44,24 +44,35 @@ class GameTitle(Scene):
 
         pygame.mixer.music.set_volume(self.parameter["volume"])
 
-        self.bg = pygame.transform.smoothscale(pygame.image.load("assets/icon/background.jpg"),
-                                               (self.screen.get_width(), self.screen.get_height()))
+        self.bg = pygame.transform.smoothscale(
+            pygame.image.load("assets/icon/background.jpg"),
+            (self.screen.get_width(), self.screen.get_height()),
+        )
 
         font_size = int(self.screen.get_height() * 0.065)
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
-        self.buttons = [Button(option, (self.screen.get_width() - button_width) // 2,
-                               int(self.screen.get_height() * 0.65) + i * (self.screen.get_height() * 0.1),
-                               button_width, button_height,
-                               (255, 255, 255), "assets/font/Space-Laser-BF65f80ab15c082.otf", font_size) for i, option
-                        in enumerate(self.options)]
+        self.buttons = [
+            Button(
+                option,
+                (self.screen.get_width() - button_width) // 2,
+                int(self.screen.get_height() * 0.65)
+                + i * (self.screen.get_height() * 0.1),
+                button_width,
+                button_height,
+                (255, 255, 255),
+                "assets/font/Space-Laser-BF65f80ab15c082.otf",
+                font_size,
+            )
+            for i, option in enumerate(self.options)
+        ]
 
     def __del__(self):
         pygame.mixer.music.stop()
 
     def handle_events(self, event: pygame.event.Event):
         """
-            Handles events specific to the title screen.
+        Handles events specific to the title screen.
         """
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE or event.key == pygame.K_KP_ENTER:
@@ -82,11 +93,13 @@ class GameTitle(Scene):
                     self.choice.set_choice(i + 1)
         elif event.type == self.event:
             if event.dict.get("scene") == "quit":
-                pygame.event.post(pygame.event.Event(pygame.QUIT))  # Close the game and exit
+                pygame.event.post(
+                    pygame.event.Event(pygame.QUIT)
+                )  # Close the game and exit
 
     def update(self):
         """
-            Updates the title screen.
+        Updates the title screen.
         """
         pass
 
@@ -114,32 +127,47 @@ class GameTitle(Scene):
             button.render(self.screen)  # Render the button object onto the screen
 
             # Calculate the position of the text
-            button_width, button_height = button.get_size()  # Get the size of the text object
-            x = (self.screen.get_width() - button_width) // 2  # Calculate the horizontal position (centered)
+            button_width, button_height = (
+                button.get_size()
+            )  # Get the size of the text object
+            x = (
+                        self.screen.get_width() - button_width
+                ) // 2  # Calculate the horizontal position (centered)
             y = int(self.screen.get_height() * 0.65) + i * (
-                    self.screen.get_height() * 0.1)  # Calculate the vertical position (80% from the top plus an offset)
+                    self.screen.get_height() * 0.1
+            )  # Calculate the vertical position (80% from the top plus an offset)
 
             # Draw a triangle around the current choice
             if choice == i + 1:
                 offset = button_height / 2
 
                 x -= 20
-                points = [(x - offset, y + offset * 2), (x - offset, y), (x, y + offset)]
+                points = [
+                    (x - offset, y + offset * 2),
+                    (x - offset, y),
+                    (x, y + offset),
+                ]
                 pygame.draw.polygon(self.screen, button.color, points)
 
                 x += 40 + button_width
-                points = [(x + offset, y + offset * 2), (x + offset, y), (x, y + offset)]
+                points = [
+                    (x + offset, y + offset * 2),
+                    (x + offset, y),
+                    (x, y + offset),
+                ]
                 pygame.draw.polygon(self.screen, button.color, points)
 
     def choice_handler(self, choice):
         """
-            Handles the choice of the player.
+        Handles the choice of the player.
         """
         if choice == 1:
             pygame.event.post(pygame.event.Event(self.event, {"scene": "game"}))
             self.running = False
         elif choice == 2:
-            settings_scene = SettingsScene(self.core, self.render)  # Create and run the settings scene
+            settings_scene = SettingsScene(
+                self.core, self.render
+            )  # Create and run the settings scene
             settings_scene.run()
             self.setup()
         elif choice == 3:
