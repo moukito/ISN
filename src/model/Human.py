@@ -7,6 +7,7 @@ from model.Ressource import RessourceType
 from model.Geometry import Point
 from model.Map import Map
 from model.AStar import AStar
+from model.Upgrades import HumanType
 
 class HumanState(Enum):
     IDLE = 0
@@ -23,10 +24,6 @@ class HumanWork(Enum):
 class GatherState(Enum):
     GATHERING = 1
     DEPOSITING = 2
-
-class HumanType(Enum):
-    COLONIST = 1
-    SOLDIER = 2
 
 class Human(Entity):
     __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "state", "work", "gather_state", "map", "player"]
@@ -120,6 +117,8 @@ class Human(Entity):
         self.go_to_location(self.target_location)
 
     def go_to_location(self, location):
+        # TODO: Add a small random offset to be able to distinguish multiple humans going to the same location 
+        # TODO: Fix the human not going to the nearest building
         self.progression = 0
         struct = self.map.occupied_coords.get(location, None)
         if struct is None:
@@ -210,6 +209,29 @@ class Human(Entity):
         self.going_to_work = False
         self.going_to_target = False
 
-class Colonist(Human):
+class Colon(Human):
     def __init__(self, map, location, player):
-        super().__init__(100, HumanType.COLONIST, 5, 1, 2, map, location, player)
+        super().__init__(100, HumanType.COLON, 5, 1, 2, map, location, player)
+
+class Miner(Human):
+    def __init__(self, map, location, player):
+        super().__init__(100, HumanType.MINER, 5, 1, 2, map, location, player)
+
+class Lumberjack(Human):
+    def __init__(self, map, location, player):
+        super().__init__(100, HumanType.LUMBERJACK, 5, 1, 2, map, location, player)
+
+class Farmer(Human):
+    def __init__(self, map, location, player):
+        super().__init__(100, HumanType.FARMER, 5, 1, 2, map, location, player)
+
+
+human_type_class = {
+    HumanType.COLON: Colon,
+    HumanType.MINER: Miner,
+    HumanType.LUMBERJACK: Lumberjack,
+    HumanType.FARMER: Farmer
+}
+
+def get_human_class_from_type(human_type):
+    return human_type_class[human_type]

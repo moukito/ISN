@@ -5,6 +5,7 @@ import random
 from model.Geometry import Point, Rectangle
 from model.Ressource import RessourceType
 from model.Player import Player
+from model.Upgrades import Technologies, HumanType
 
 class StructureType(Enum):
     TREE = 1
@@ -124,7 +125,7 @@ class BuildingState(Enum):
     BUILT = 2
 
 class Building(TypedStructure):
-    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player", "upper_left", "rect_size"]
+    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player", "upper_left", "rect_size", "gamevue"]
 
     def __init__(self, costs, health, building_duration, type, coords, points, player, orientation=Orientation.RANDOM) -> None:
         super().__init__(type, StructureType.BUILDING, coords, points, orientation)
@@ -135,6 +136,7 @@ class Building(TypedStructure):
         self.workers = 0
         self.player = player
         self.state = BuildingState.PLACED
+        self.gamevue = None
 
         min = Point(+inf, +inf)
         max = Point(-inf, -inf)
@@ -170,14 +172,44 @@ class Building(TypedStructure):
                 self.state = BuildingState.BUILT
 
         return self.state
+    
+    def get_buttons(self, gamevue):
+        return None
+
+# TODO: remove the technology buttons when the technology is unlocked
 
 class BaseCamp(Building):
     def __init__(self, coords, player) -> None:
         super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, Orientation.NORTH)
+
+    def get_buttons(self, gamevue):
+        self.gamevue = gamevue
+        return {
+            Point(0, 0): ({RessourceType.FOOD: 150}, HumanType.COLON, self.spawn_colon),
+            Point(1, 0): ({RessourceType.FOOD: 400, RessourceType.WOOD: 300, RessourceType.STONE: 300}, Technologies.BUILDING_HEALTH, None), #TODO: Add a callback
+            Point(1, 1): ({RessourceType.WOOD: 500, RessourceType.STONE: 600, RessourceType.CRYSTAL: 500}, Technologies.BUILDING_TIME, None), #TODO: Add a callback
+        }
+    
+    def spawn_colon(self):
+        if self.player.get_ressource(RessourceType.FOOD) >= 150:
+            self.player.add_ressource(RessourceType.FOOD, -150)
+            self.gamevue.add_human(HumanType.COLON, self.coords + random.choice(Rectangle(-2, -2, 2, 2).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
         
 class Pantry(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 1 * 60, BuildingType.PANTRY, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+
+    def get_buttons(self, gamevue):
+        self.gamevue = gamevue
+        return {
+            Point(0, 0): ({RessourceType.FOOD: 200}, HumanType.FARMER, self.spawn_farmer),
+            Point(1, 0): ({RessourceType.FOOD: 600, RessourceType.WOOD: 300, RessourceType.IRON: 300}, Technologies.AGRICULTURE, None), #TODO: Add a callback
+        }
+    
+    def spawn_farmer(self):
+        if self.player.get_ressource(RessourceType.FOOD) >= 200:
+            self.player.add_ressource(RessourceType.FOOD, -200)
+            self.gamevue.add_human(HumanType.FARMER, self.coords + random.choice(Rectangle(-1, -1, 1, 1).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
 
 class Farm(Building):
     __slots__ = ["food"]
@@ -196,6 +228,19 @@ class MinerCamp(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 0, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
 
+    def get_buttons(self, gamevue):
+        self.gamevue = gamevue
+        return {
+            Point(0, 0): ({RessourceType.FOOD: 150, RessourceType.COPPER: 50}, HumanType.FARMER, self.spawn_miner),
+            Point(1, 0): ({RessourceType.IRON: 600, RessourceType.COPPER: 400, RessourceType.VULCAN: 200}, Technologies.MINING, None), #TODO: Add a callback
+        }
+    
+    def spawn_miner(self):
+        if self.player.get_ressource(RessourceType.FOOD) >= 150 and self.player.get_ressource(RessourceType.COPPER) >= 50:
+            self.player.add_ressource(RessourceType.FOOD, -150)
+            self.player.add_ressource(RessourceType.COPPER, -50)
+            self.gamevue.add_human(HumanType.MINER, self.coords + random.choice(Rectangle(-1, -1, 1, 1).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
+
 
 typeToClass = {
     BuildingType.BASE_CAMP: BaseCamp,
@@ -204,5 +249,5 @@ typeToClass = {
     BuildingType.MINER_CAMP: MinerCamp
 }
 
-def get_class_from_type(structure_type):
+def get_struct_class_from_type(structure_type):
     return typeToClass[structure_type]
