@@ -42,7 +42,7 @@ class BuildingChoice:
         self.margin = 5
         self.padding = 3
         self.building_size = 115
-        self.internal_origin = Point(34, 37)
+        self.internal_origin = Point(34, 44)
         self.rect = Rectangle(0, 0, self.width, self.screen_size.y - self.ressource_rect_size.y - 20)
         self.ressource_icons = ressource_icons
         self.background = pygame.transform.scale(pygame.image.load("assets/building_ui.png").convert_alpha(), (self.rect.x2, self.rect.y2))
