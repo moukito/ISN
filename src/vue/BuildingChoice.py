@@ -21,7 +21,7 @@ class BuildingChoice:
             BuildingType.MINER_CAMP: {RessourceType.WOOD: 75, RessourceType.STONE: 25}
         }
         
-        self.font = pygame.font.Font(None, 15) # TODO : change the font
+        self.font = pygame.font.Font("assets/font/Junter.otf", 12)
 
         self.building_icons = {}
         self.building_rendered_names = {}

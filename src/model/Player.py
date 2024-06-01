@@ -4,15 +4,16 @@ class Player:
     __slots__ = ["ressources", "ressource_update_callback"]
 
     def __init__(self, ressource_update_callback) -> None:
+        delta = 0.05 # Add a small delta to remove floating point errors with ressource gathering
         self.ressources = {
-            RessourceType.FOOD: 200,
-            RessourceType.WOOD: 150,
-            RessourceType.STONE: 0,
-            RessourceType.GOLD: 0, 
-            RessourceType.COPPER: 0, 
-            RessourceType.IRON: 0,
-            RessourceType.CRYSTAL: 0,
-            RessourceType.VULCAN: 0
+            RessourceType.FOOD: 200 + delta,
+            RessourceType.WOOD: 150 + delta,
+            RessourceType.STONE: delta,
+            RessourceType.GOLD: delta, 
+            RessourceType.COPPER: delta,
+            RessourceType.IRON: delta,
+            RessourceType.CRYSTAL: delta,
+            RessourceType.VULCAN: delta
         }
         self.ressource_update_callback = ressource_update_callback
 

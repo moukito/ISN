@@ -10,7 +10,7 @@ class BuildingInterface:
     __slots__ = ["font", "buttons", "buttons_infos", "player", "screen", "screen_size", "ressource_rect_size", "margin", "padding", "cell_size", "internal_origin", "rect", "ressource_icons", "technology_icons", "human_icon", "background"]
 
     def __init__(self, player, screen, screen_size, ressource_rect_size, ressource_icons):
-        self.font = pygame.font.Font(None, 15) # TODO : change the font
+        self.font = pygame.font.Font("assets/font/Junter.otf", 12)
         self.buttons_infos = {}
         self.buttons = {}
         self.player = player
@@ -44,11 +44,9 @@ class BuildingInterface:
             buttons (dict): The buttons to create. {Point(cell_row, cell_column): (costs, type (icon), callback)}
         """
         self.buttons.clear()
-        self.buttons_infos.clear()
-
         self.buttons_infos = buttons_info
         for cell_pos in buttons_info.keys():
-            button = Button("", self.internal_origin.x + cell_pos.y * (self.cell_size + self.margin), self.internal_origin.y + cell_pos.x * (self.cell_size + self.margin), self.cell_size, self.cell_size, (74, 88, 128), None, 15)
+            button = Button("", self.internal_origin.x + cell_pos.y * (self.cell_size + self.margin), self.internal_origin.y + cell_pos.x * (self.cell_size + self.margin), self.cell_size, self.cell_size, (74, 88, 128), "assets/font/Junter.otf", 15)
             self.buttons[cell_pos] = button
 
     def render(self):
@@ -82,9 +80,9 @@ class BuildingInterface:
                 for ressource_type, ressource_number in self.buttons_infos[pos][0].items():
                     if self.player.get_ressource(ressource_type) < ressource_number:
                         enough_ressources = False
-                        result = True
                 if enough_ressources:
                     self.buttons_infos[pos][2]()
+                    result = True
                 button.color = (110, 126, 180)
             if button.is_hovered(event):
                 button.color = (92, 104, 155)

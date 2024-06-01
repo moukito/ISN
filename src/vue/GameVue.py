@@ -8,20 +8,19 @@ from vue.BuildingChoice import BuildingChoice
 from vue.BuildingInterface import BuildingInterface
 from vue.Button import Button
 
-from model.Tools import Colors
+from model.Tools import Colors, Directions
 from model.Map import Map, Biomes
 from model.Geometry import Point, Rectangle, Circle
 from model.Perlin import Perlin
 from model.Player import Player
 from model.Ressource import RessourceType
-from model.Structures import StructureType, BuildingType, OreType, BaseCamp, Farm, get_struct_class_from_type
+from model.Structures import StructureType, BuildingType, BuildingState, OreType, BaseCamp, Farm, get_struct_class_from_type
 from model.Human import Human, Colon, Lumberjack, Miner, Farmer, get_human_class_from_type
+from model.HumanType import HumanType
 from model.Saver import Saver
 
-# TODO: refactorize this code
-
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "camera_pos", "clicking", "moving", "camera_moved", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building_moved", "building", "building_pos", "building_pos_old", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -35,15 +34,14 @@ class GameVue(Scene):
         self.building_button_rect = None
         self.biomes_textures = None
         self.ressource_icons = None
+        self.humans_textures = None
         self.tree_texture = None
         self.ore_textures = None
         self.building_textures = None
         self.missing_texture = None
         self.ressource_font = None
-        self.building_pos_old = None
         self.building_pos = None
         self.building = None
-        self.building_moved = None
 
         self.player = Player(self.ressource_update_callback)
 
@@ -52,9 +50,10 @@ class GameVue(Scene):
         self.buildings = []
 
         self.frame_render = False
-        self.clicking = False
-        self.moving = False
-        self.camera_moved = True
+        self.render_until_event = True
+        self.left_clicking = False
+        self.right_clicking = False
+        self.button_hovered = False
         self.camera_pos = Point.origin()
         self.start_click_pos = Point.origin()
         self.mouse_pos = Point.origin()
@@ -88,13 +87,11 @@ class GameVue(Scene):
         self.saver = Saver(self)
 
     def reset_building(self):
-        self.building_moved = False
         self.building = None
         self.building_pos = Point.origin()
-        self.building_pos_old = Point(-1, -1)
 
     def load_ressources(self):
-        self.ressource_font = pygame.font.Font(None, 20) # TODO : change the font
+        self.ressource_font = pygame.font.Font("assets/font/Junter.otf", 16)
 
         self.ressource_icons = {}
         for ressource_type in RessourceType:
@@ -105,6 +102,18 @@ class GameVue(Scene):
             self.biomes_textures[biome] = pygame.transform.scale(pygame.image.load("assets/icons/" + biome.name.lower() + ".jpg").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
 
         self.tree_texture = pygame.transform.scale(pygame.image.load("assets/Textures/Tree.png").convert_alpha(), (Map.CELL_SIZE * 3, Map.CELL_SIZE * 3))
+
+        self.humans_textures = {}
+        orientation_filenames = {
+            Directions.BOTTOM: "b.png",
+            Directions.RIGHT: "r.png",
+            Directions.LEFT: "l.png",
+            Directions.TOP: "t.png"
+        }
+        for human_type in HumanType:
+            self.humans_textures[human_type] = {}
+            for orientation in Directions:
+                self.humans_textures[human_type][orientation] = pygame.transform.scale(pygame.image.load("assets/Textures/Humans/" + human_type.name.lower() + "/" + orientation_filenames[orientation]).convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
 
         self.building_textures = {}
         for building in BuildingType:
@@ -143,26 +152,31 @@ class GameVue(Scene):
         }
 
     def handle_events(self, event):
-        # TODO : reverse right and left click from selecting and moving the camera
         mouse_pos = pygame.mouse.get_pos()
         mouse_point = Point(mouse_pos[0], mouse_pos[1])
-        home_button_clicked, building_button_clicked = self.home_button_rect.containsPoint(mouse_point), self.building_button_rect.containsPoint(mouse_point)
+        home_button_hovered, building_button_hovered = self.home_button_rect.containsPoint(mouse_point), self.building_button_rect.containsPoint(mouse_point)
+
+        # Events for the building choice interface 
         if self.building_choice_displayed and self.building_choice.rect.containsPoint(mouse_point):
             result = self.building_choice.event_stream(event)
             if result is not None:
                 self.building = get_struct_class_from_type(result)(self.camera_pos // Map.CELL_SIZE, self.player)
+                self.building_pos = mouse_point - self.screen_size // 2
                 self.building_choice_displayed = False
             self.frame_render = True
-        elif self.building_interface_displayed and self.building_interface.rect.containsPoint(mouse_point): # TODO: remove the interface if the user is clicking elsewhere
+        # Events for the building interface
+        elif self.building_interface_displayed and self.building_interface.rect.containsPoint(mouse_point):
             if self.building_interface.event_stream(event):
-                pass # TODO
+                pass # Nothing to do for now, but I keep it if we need it later
             self.frame_render = True
-        elif home_button_clicked or building_button_clicked:
-            clicked_button = self.home_button if home_button_clicked else self.building_button
+        # Events for the buttons
+        elif home_button_hovered or building_button_hovered:
+            self.button_hovered = True
+            clicked_button = self.home_button if home_button_hovered else self.building_button
             clicked = clicked_button.is_clicked(event)
             if clicked:
                 clicked_button.color = (115, 207, 255)
-                if home_button_clicked:
+                if home_button_hovered:
                     self.camera_pos = Point.origin()
                 else:
                     self.building_choice_displayed = not self.building_choice_displayed
@@ -172,92 +186,104 @@ class GameVue(Scene):
             elif not clicked:
                 clicked_button.color = (46, 159, 228)
             self.frame_render = True
-        else:
+        else: # Events for the game
+            # MOUSE BUTTON DOWN
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pressed_mouse_buttons = pygame.mouse.get_pressed()
-                if pressed_mouse_buttons[2]:
-                    self.selecting = True
-                    self.selected_humans.clear()
-                    self.select_start = Point(mouse_pos[0], mouse_pos[1])
+                if pressed_mouse_buttons[0]:
+                    self.left_clicking = True
+                    self.select_start = mouse_point
                     self.select_end = self.select_start
-                elif pressed_mouse_buttons[0]:
-                    self.clicking = True
+                elif pressed_mouse_buttons[2]:
+                    self.right_clicking = True
                     if self.building is None:
-                        self.mouse_pos = self.start_click_pos = Point(mouse_pos[0], mouse_pos[1])
+                        self.mouse_pos = mouse_point
+                self.start_click_pos = mouse_point
+            # MOUSE BUTTON UP
             elif event.type == pygame.MOUSEBUTTONUP:
                 pressed_mouse_buttons = pygame.mouse.get_pressed()
 
-                if not pressed_mouse_buttons[0] and self.clicking:
-                    if len(self.selected_humans) > 0:
-                        pos_point = Point(mouse_pos[0], mouse_pos[1])
-                        cell = (pos_point + self.camera_pos - self.screen_size // 2) // Map.CELL_SIZE
+                if not pressed_mouse_buttons[2] and self.right_clicking:
+                    self.right_clicking = False
+                elif not pressed_mouse_buttons[0]:
+                    if self.building is not None:
+                        self.building.coords = self.building_pos // Map.CELL_SIZE + self.camera_pos // Map.CELL_SIZE
+                        if self.left_clicking and self.map.place_structure(self.building):
+                            for ressource_type, ressource_number in self.building.costs.items():
+                                self.player.add_ressource(ressource_type, -ressource_number)
+                            self.reset_building()
+                            self.left_clicking = False
+                            self.frame_render = True
+                    elif self.selecting:
+                        self.frame_render = True
+                        self.selecting = False
+                        self.left_clicking = False
+                        self.select_start = Point.origin()
+                        self.select_end = Point.origin()
+                    elif len(self.selected_humans) > 0:
+                        self.left_clicking = False
+                        cell = (mouse_point + self.camera_pos - self.screen_size // 2) // Map.CELL_SIZE
                         for human in self.selected_humans:
                             human.set_target_location(cell)
                         self.selected_humans.clear()
                         self.frame_render = True
-                    if self.building is not None or self.clicking:
-                        if self.building is None:
-                            if not self.moving:
-                                pos_point = Point(mouse_pos[0], mouse_pos[1]) + self.camera_pos - self.screen_size // 2
-                                cell_pos = pos_point // Map.CELL_SIZE
-                                chunk_pos = cell_pos // Perlin.CHUNK_SIZE
-                                if self.map.chunk_humans.get(chunk_pos, None) is not None:
-                                    for human in self.map.chunk_humans[chunk_pos]:
-                                        if Circle(human.current_location + Human.CELL_CENTER, 10).contains(pos_point):
-                                            self.selected_humans.append(human) # TODO: unselect if the next right click MOUSEBUTTONUP is not on a human 
-                                            self.selecting = False
-                                            break
-                                    self.frame_render = len(self.selected_humans) > 0
-                                building = self.map.occupied_coords.get(cell_pos, None)
-                                if not self.selecting and building is not None and building.structure_type == StructureType.BUILDING:
-                                    buttons = building.get_buttons(self)
-                                    if buttons is not None:
-                                        self.building_interface_displayed = not self.building_interface_displayed
-                                        if self.building_interface_displayed:
-                                            self.building_interface.create_buttons(buttons)
-                                        self.frame_render = True
-                                    
-                            self.clicking = False
-                            self.moving = False
-                        else:
-                            self.building.coords = (self.building_pos + Point(int(self.camera_pos.x), int(self.camera_pos.y)) - self.screen_size // 2) // Map.CELL_SIZE
-                            if self.map.place_structure(self.building):
-                                for ressource_type, ressource_number in self.building.costs.items():
-                                    self.player.add_ressource(ressource_type, -ressource_number)
-                                self.reset_building()
-                                self.clicking = False
+                    else:
+                        pos_point = mouse_point + self.camera_pos - self.screen_size // 2
+                        cell_pos = pos_point // Map.CELL_SIZE
+                        chunk_pos = cell_pos // Perlin.CHUNK_SIZE
+                        chunk_humans = self.map.chunk_humans.get(chunk_pos, None)
+                        if chunk_humans is not None:
+                            for human in chunk_humans:
+                                if Circle(human.current_location, 15).contains(pos_point + self.camera_pos):
+                                    self.selected_humans.append(human)
+                                    self.selecting = False
+                                    break
+                            self.frame_render = len(self.selected_humans) > 0
+
+                        building = self.map.occupied_coords.get(cell_pos, None)
+                        if building is not None and building.structure_type == StructureType.BUILDING and building.state == BuildingState.BUILT:
+                            if self.building_interface_displayed:
+                                self.building_interface_displayed = False
                                 self.frame_render = True
-                elif not pressed_mouse_buttons[2] and self.selecting:
-                    self.frame_render = True
-                    self.selecting = False
-                    self.select_start = Point.origin()
-                    self.select_end = Point.origin()
-
+                            else:
+                                buttons = building.get_buttons(self)
+                                if len(buttons) > 0:
+                                    self.building_interface_displayed = True
+                                    self.building_interface.create_buttons(buttons)
+                                    self.frame_render = True
+                        else:
+                            if self.building_interface_displayed and self.left_clicking:
+                                self.building_interface_displayed = False
+                                self.frame_render = True
+                            
+                        self.left_clicking = False
+            # MOUSE MOTION
             elif event.type == pygame.MOUSEMOTION:
-                self.building_button.color = (46, 159, 228)
-                self.home_button.color = (46, 159, 228)
-                self.frame_render = True
+                self.render_until_event = False
+                if self.button_hovered:
+                    self.button_hovered = False
+                    self.building_button.color = (46, 159, 228)
+                    self.home_button.color = (46, 159, 228)
+                    self.frame_render = True
 
-                pos_point = Point(mouse_pos[0], mouse_pos[1])
                 if self.selecting:
-                    self.select_end = pos_point
-                elif self.clicking:
-                    # TODO: fine-tune this
-                    if not self.moving and self.start_click_pos.distance(pos_point) > 10:
-                        self.moving = True 
-                    elif self.moving:
-                        self.camera_pos += (self.mouse_pos - pos_point) * (2.8 / 2.0)
-                        self.camera_moved = (self.mouse_pos - pos_point) != Point.origin()
+                    self.select_end = mouse_point
+                elif self.right_clicking:
+                    self.camera_pos += (self.mouse_pos - mouse_point) * (2.8 / 2.0)
+                    if (self.mouse_pos - mouse_point) != Point.origin():
+                        self.frame_render = True
                 elif self.building is not None:
-                    self.building_moved = (self.mouse_pos - self.building_pos) // Map.CELL_SIZE != Point.origin()
-
-                    if self.building_moved:
-                        self.building_pos = pos_point
-                self.mouse_pos = pos_point
+                    if (self.mouse_pos - self.building_pos) // Map.CELL_SIZE != Point.origin():
+                        self.building_pos = mouse_point - self.screen_size // 2
+                        self.frame_render = True
+                elif self.left_clicking and self.start_click_pos.distance(mouse_point) > 10:
+                    self.selecting = True
+                self.mouse_pos = mouse_point
+            # KEY UP
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_s:
+                if event.key == pygame.K_s: # TODO: temporary
                     self.saver.save()
-                if event.key == pygame.K_h: # TODO : temporary
+                if event.key == pygame.K_h: # TODO: For debug, remove for the final version
                     chunk_pos = self.camera_pos // Map.CELL_SIZE // Perlin.CHUNK_SIZE
                     if self.map.chunk_humans.get(chunk_pos, None) is None:
                         self.map.chunk_humans[chunk_pos] = []
@@ -267,6 +293,7 @@ class GameVue(Scene):
                     self.frame_render = True
                 if event.key == pygame.K_ESCAPE:
                     self.reset_building()
+                    self.selected_humans.clear()
                     self.frame_render = True
 
     def update(self):
@@ -278,26 +305,20 @@ class GameVue(Scene):
             self.frame_render = True
 
     def render(self):
-        if self.camera_moved or self.building_moved or self.selecting or self.frame_render:
+        if self.selecting or self.frame_render or self.render_until_event:
             if self.frame_render:
                 self.frame_render = False
             self.render_map()
 
-            if self.camera_moved:
-                self.camera_moved = False
-            elif self.building_moved:
-                # TODO: maybe optimize by removing the render of the entire map?
-                self.building_moved = False
-
             self.render_selection()
+
+            self.render_interface()
             
             if self.building_choice_displayed:
                 self.building_choice.render()
 
             if self.building_interface_displayed:
                 self.building_interface.render()
-
-            self.render_interface()
 
         #print(self.clock.get_fps())
 
@@ -357,24 +378,34 @@ class GameVue(Scene):
                                 absolute_point = (struct.coords + struct.upper_left) * Map.CELL_SIZE - camera_pos + screen_center_rounded
                                 self.screen.blit(self.building_textures[struct.type] if self.building_textures.get(struct.type, None) != None else self.missing_texture, (absolute_point.x, absolute_point.y))
                                 shown_buildings[struct] = True
+                                if struct.state == BuildingState.BUILDING or struct.state == BuildingState.PLACED:
+                                    pygame.draw.rect(self.screen, self.colors[Colors.WHITE], (absolute_point.x + (struct.rect_size.x * Map.CELL_SIZE - Map.CELL_SIZE * 2) // 2, absolute_point.y - Map.CELL_SIZE, Map.CELL_SIZE * 2, Map.CELL_SIZE // 2))
+                                    pygame.draw.rect(self.screen, self.colors[Colors.BLUE], (absolute_point.x + (struct.rect_size.x * Map.CELL_SIZE - Map.CELL_SIZE * 2) // 2, absolute_point.y - Map.CELL_SIZE, int(Map.CELL_SIZE * 2 * (struct.building_time / struct.building_duration)), Map.CELL_SIZE // 2))
+                                elif False: # TODO: progressbar to produce technologies and units
+                                    pass
                             elif struct.structure_type == StructureType.ORE:
                                 absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
                                 self.screen.blit(self.ore_textures[struct.type] if self.ore_textures.get(struct.type, None) != None else self.missing_texture, (absolute_point.x, absolute_point.y))
                             elif struct.structure_type == StructureType.TREE and shown_trees.get(struct, None) is None:
-                                absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
+                                absolute_point = (struct.coords + Point(-1, -1)) * Map.CELL_SIZE - camera_pos + screen_center_rounded
                                 self.screen.blit(self.tree_texture, (absolute_point.x, absolute_point.y))
                                 shown_trees[struct] = True
 
         # RENDER PLACE BUILDING
         if self.building is not None:
-            if self.building_pos_old != Point(-1, -1):
-                # TODO: for optimization
-                pass
-
             relative_center = self.building_pos // Map.CELL_SIZE
+            relative_position = (self.building_pos) // Map.CELL_SIZE + camera_cell
+            
             for point in self.building.points:
-                absolute_point = (relative_center + point) * Map.CELL_SIZE - camera_offset
-                pygame.draw.rect(self.screen, self.colors[Colors.BLACK if self.map.occupied_coords.get(point + relative_center - screen_center_cell + camera_cell, None) is None else Colors.RED], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
+                absolute_point = (relative_center + point) * Map.CELL_SIZE + screen_center_rounded - camera_offset
+                color = Colors.BLACK
+                if self.map.occupied_coords.get(point + relative_position, None) is not None:
+                    color = Colors.RED
+                pygame.draw.rect(self.screen, self.colors[color], (absolute_point.x, absolute_point.y, Map.CELL_SIZE, Map.CELL_SIZE))
+
+            absolute_point = (relative_center + self.building.upper_left) * Map.CELL_SIZE + screen_center_rounded - camera_offset
+            self.screen.blit(self.building_textures[self.building.type] if self.building_textures.get(self.building.type, None) != None else self.missing_texture, (absolute_point.x, absolute_point.y))
+            
 
         if self.selecting:
             self.selected_humans.clear()
@@ -383,7 +414,6 @@ class GameVue(Scene):
             ids = [id(h) for h in self.selected_humans]
                 
         # RENDER HUMANS
-        # TODO : fix the offset
         for x in range(tl_chunk.x, tl_chunk.x + chunks_size.x + 1):
             for y in range(tl_chunk.y, tl_chunk.y + chunks_size.y + 1):
                 actual_chunk_humans = self.map.chunk_humans.get(Point(x, y), None)
@@ -398,7 +428,9 @@ class GameVue(Scene):
                         else:
                             selected = id(human) in ids
 
-                        pygame.draw.circle(self.screen, self.colors[Colors.BLUE if selected else Colors.AQUA], (absolute_point.x, absolute_point.y), 10)
+                        if selected:
+                            pygame.draw.circle(self.screen, self.colors[Colors.AQUA], (absolute_point.x + Map.CELL_SIZE // 2 + 1, absolute_point.y + Map.CELL_SIZE // 2), 10)
+                        self.screen.blit(self.humans_textures[human.type][human.orientation], (absolute_point.x, absolute_point.y))
                 
 
     def render_selection(self):
@@ -409,7 +441,6 @@ class GameVue(Scene):
             self.screen.blit(s, (self.select_start.x if self.select_start.x < self.select_end.x else self.select_end.x, self.select_start.y if self.select_start.y < self.select_end.y else self.select_end.y))
 
     def render_interface(self):
-        # TODO : store the map under the interface in a buffer to refresh only the interface when needed and not the entire map
         ressource_icons_texts = {}
         for ressource_type in RessourceType:
             text = self.render_ressource_text(ressource_type)

@@ -1,12 +1,5 @@
 from enum import Enum
 
-class HumanType(Enum):
-    COLON = 1
-    MINER = 2
-    LUMBERJACK = 3
-    FARMER = 4
-    #SOLDIER = 5
-
 class Technologies(Enum):
     FORESTRY = 1
     AGRICULTURE = 2
@@ -14,4 +7,12 @@ class Technologies(Enum):
     HUNT = 4
     BUILDING_HEALTH = 5
     BUILDING_TIME = 6
-    EXTRA_MATERIALS = 7 # TODO: To unlock Crystal and Vulcan
+    EXTRA_MATERIALS = 7
+
+class Upgrades:
+    BUILDING_HEALTH_MULTIPLIER = 1
+    BUILDING_TIME_MULTIPLIER = 1
+
+    FOOD_MULTIPLIER = 1
+    MINING_MULTIPLIER = 1
+    EXTRA_MATERIALS = False

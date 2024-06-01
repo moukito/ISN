@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from model.Perlin import Perlin
-from model.Structures import StructureType, Tree, Ore, OreType
+from model.Structures import BuildingState, StructureType, Tree, Ore, OreType
 from model.Geometry import Point, Rectangle
 
 
@@ -269,7 +269,8 @@ class Map:
         need_render = False
 
         for building in self.buildings:
-            building.update(duration)
+            if building.update(duration):
+                need_render = True
 
         chunk_humans = self.chunk_humans.copy()
         for chunk_coords, humans in self.chunk_humans.items():
