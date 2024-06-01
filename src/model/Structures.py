@@ -119,6 +119,7 @@ class BuildingType(Enum):
     FARM = 3
     LUMBER_CAMP = 4
     MINER_CAMP = 5
+    HUNTER_CAMP = 6
 
 class BuildingState(Enum):
     PLACED = 0
@@ -258,6 +259,14 @@ class MinerCamp(Building):
             self.player.add_ressource(RessourceType.FOOD, -150)
             self.player.add_ressource(RessourceType.COPPER, -50)
             self.gamevue.add_human(HumanType.MINER, self.coords + random.choice(Rectangle(-1, -1, 1, 1).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
+            
+class LumberCamp(Building) :
+    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None : 
+        super().__init__(None, 550, 1*60, BuildingType.LUMBER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
+
+class HunterCamp(Building) :
+    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None :
+        super().__init__(None, 550, 1*60, BuildingType.HUNTER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
 
     def technology_mining(self):
         Upgrades.MINING_MULTIPLIER = 2
