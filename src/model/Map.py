@@ -164,6 +164,7 @@ class Map:
                 elif height > 0:
                     processed_chunk[i][j] = Biomes.FOREST.value
                     self.try_generate_ore(chunk_coords, position, 0.015, 1, [OreType.IRON, OreType.STONE], 2, OreType.IRON)
+                    self.try_generate_ore(chunk_coords, position, 0.010, 2, [OreType.COPPER, OreType.IRON, OreType.STONE], 2, OreType.GOLD)
                     self.try_generate_tree(chunk_coords, position, 0.015, 1, 15)
                 elif height > -2.75:
                     processed_chunk[i][j] = Biomes.PLAIN.value
