@@ -190,7 +190,7 @@ class BaseCamp(Building):
     
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
-        buttons = self.buttons
+        buttons = self.buttons.copy()
         if Upgrades.BUILDING_HEALTH_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.FOOD: 400, RessourceType.WOOD: 300, RessourceType.STONE: 300}, Technologies.BUILDING_HEALTH, self.technology_building_health)
         if Upgrades.BUILDING_TIME_MULTIPLIER != 2:
@@ -203,14 +203,22 @@ class BaseCamp(Building):
             self.gamevue.add_human(HumanType.COLON, self.coords + random.choice(Rectangle(-2, -2, 2, 2).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
 
     def technology_building_time(self):
-        Upgrades.BUILDING_TIME_MULTIPLIER = 2
+        if self.player.get_ressource(RessourceType.FOOD) >= 400 and self.player.get_ressource(RessourceType.WOOD) >= 300 and self.player.get_ressource(RessourceType.STONE) >= 300:
+            self.player.add_ressource(RessourceType.FOOD, -400)
+            self.player.add_ressource(RessourceType.WOOD, -300)
+            self.player.add_ressource(RessourceType.STONE, -300)
+            Upgrades.BUILDING_TIME_MULTIPLIER = 2
 
     def technology_building_health(self):
-        Upgrades.BUILDING_HEALTH_MULTIPLIER = 2
-        for building in self.gamevue.map.buildings:
-            if building.player == self.player:
-                print(building.player, self.player)
-                building.health *= 2
+        if self.player.get_ressource(RessourceType.WOOD) >= 500 and self.player.get_ressource(RessourceType.STONE) >= 600 and self.player.get_ressource(RessourceType.CRYSTAL) >= 500:
+            self.player.add_ressource(RessourceType.WOOD, -500)
+            self.player.add_ressource(RessourceType.STONE, -600)
+            self.player.add_ressource(RessourceType.CRYSTAL, -500)
+            Upgrades.BUILDING_HEALTH_MULTIPLIER = 2
+            for building in self.gamevue.map.buildings:
+                if building.player == self.player:
+                    print(building.player, self.player)
+                    building.health *= 2
         
 class Pantry(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
@@ -221,7 +229,7 @@ class Pantry(Building):
     
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
-        buttons = self.buttons
+        buttons = self.buttons.copy()
         if Upgrades.FOOD_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.FOOD: 600, RessourceType.WOOD: 300, RessourceType.IRON: 300}, Technologies.AGRICULTURE, self.technology_agriculture)
         return buttons
@@ -232,7 +240,11 @@ class Pantry(Building):
             self.gamevue.add_human(HumanType.FARMER, self.coords + random.choice(Rectangle(-1, -1, 1, 1).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
 
     def technology_agriculture(self):
-        Upgrades.FOOD_MULTIPLIER = 2
+        if self.player.get_ressource(RessourceType.FOOD) >= 600 and self.player.get_ressource(RessourceType.WOOD) >= 300 and self.player.get_ressource(RessourceType.IRON) >= 300:
+            self.player.add_ressource(RessourceType.FOOD, -600)
+            self.player.add_ressource(RessourceType.WOOD, -300)
+            self.player.add_ressource(RessourceType.IRON, -300)
+            Upgrades.FOOD_MULTIPLIER = 2
 
 class Farm(Building):
     __slots__ = ["food"]
@@ -244,12 +256,12 @@ class MinerCamp(Building):
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
         super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 2 * 60, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
         self.buttons = {
-            Point(0, 0): ({RessourceType.FOOD: 150, RessourceType.COPPER: 50}, HumanType.FARMER, self.spawn_miner)
+            Point(0, 0): ({RessourceType.FOOD: 150, RessourceType.COPPER: 50}, HumanType.MINER, self.spawn_miner)
         }
     
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
-        buttons = self.buttons
+        buttons = self.buttons.copy()
         if Upgrades.MINING_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.IRON: 600, RessourceType.COPPER: 400, RessourceType.VULCAN: 200}, Technologies.MINING, self.technology_mining)
         return buttons
@@ -259,6 +271,13 @@ class MinerCamp(Building):
             self.player.add_ressource(RessourceType.FOOD, -150)
             self.player.add_ressource(RessourceType.COPPER, -50)
             self.gamevue.add_human(HumanType.MINER, self.coords + random.choice(Rectangle(-1, -1, 1, 1).toPointList()) + Point(1, 1) * random.uniform(-0.5, 0.5))
+
+    def technology_mining(self):
+        if self.player.get_ressource(RessourceType.IRON) >= 600 and self.player.get_ressource(RessourceType.COPPER) >= 400 and self.player.get_ressource(RessourceType.VULCAN) >= 200:
+            self.player.add_ressource(RessourceType.IRON, -600)
+            self.player.add_ressource(RessourceType.COPPER, -400)
+            self.player.add_ressource(RessourceType.VULCAN, -200)
+            Upgrades.MINING_MULTIPLIER = 2
             
 class LumberCamp(Building) :
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None : 
@@ -267,9 +286,6 @@ class LumberCamp(Building) :
 class HunterCamp(Building) :
     def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None :
         super().__init__(None, 550, 1*60, BuildingType.HUNTER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
-
-    def technology_mining(self):
-        Upgrades.MINING_MULTIPLIER = 2
 
 
 typeToClass = {

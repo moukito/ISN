@@ -23,7 +23,7 @@ class Core:
         run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen", "parameter", "game_screen", "event"]
+    __slots__ = ["screen", "title_screen", "parameter", "save_name", "game_screen", "event"]
 
     def __init__(self):
         """
@@ -33,6 +33,7 @@ class Core:
         self.screen = None
         self.title_screen = None
         self.parameter = None
+        self.save_name = None
         self.event = pygame.event.custom_type()
 
         pygame.init()

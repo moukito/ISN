@@ -4,6 +4,7 @@ from vue.Button import Button
 from vue.Choice import Choice
 from vue.Scene import Scene
 from vue.SettingScene import SettingsScene
+from vue.SavesScene import SavesScene
 
 
 class GameTitle(Scene):
@@ -37,7 +38,7 @@ class GameTitle(Scene):
         pygame.mixer.music.play()
 
         self.choice = Choice()
-        self.options = ["jouer", "option", "quitter"]
+        self.options = ["jouer", "sauvegardes", "explications", "option", "quitter"]
 
     def setup(self):
         self.core.update_screen()
@@ -50,13 +51,13 @@ class GameTitle(Scene):
         )
 
         font_size = int(self.screen.get_height() * 0.065)
-        button_width = self.screen.get_width() * 0.156
+        button_width = self.screen.get_width() * 0.270
         button_height = self.screen.get_height() * 0.062
         self.buttons = [
             Button(
                 option,
                 (self.screen.get_width() - button_width) // 2,
-                int(self.screen.get_height() * 0.65)
+                int(self.screen.get_height() * 0.45)
                 + i * (self.screen.get_height() * 0.1),
                 button_width,
                 button_height,
@@ -133,7 +134,7 @@ class GameTitle(Scene):
             x = (
                         self.screen.get_width() - button_width
                 ) // 2  # Calculate the horizontal position (centered)
-            y = int(self.screen.get_height() * 0.65) + i * (
+            y = int(self.screen.get_height() * 0.45) + i * (
                     self.screen.get_height() * 0.1
             )  # Calculate the vertical position (80% from the top plus an offset)
 
@@ -165,10 +166,18 @@ class GameTitle(Scene):
             pygame.event.post(pygame.event.Event(self.event, {"scene": "game"}))
             self.running = False
         elif choice == 2:
+            saves_scene = SavesScene(
+                self.core, self.render
+            )  # Create and run the saves scene
+            saves_scene.run()
+            self.setup()
+        elif choice == 3:
+            pass
+        elif choice == 4:
             settings_scene = SettingsScene(
                 self.core, self.render
             )  # Create and run the settings scene
             settings_scene.run()
             self.setup()
-        elif choice == 3:
+        elif choice == 5:
             pygame.event.post(pygame.event.Event(pygame.QUIT))

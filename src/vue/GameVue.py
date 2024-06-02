@@ -20,7 +20,7 @@ from model.HumanType import HumanType
 from model.Saver import Saver
 
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "clicked_building", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -28,6 +28,7 @@ class GameVue(Scene):
         self.colors = None
         self.ressource_background_size = None
         self.ressource_background = None
+        self.clicked_building = None
         self.home_button = None
         self.building_button = None
         self.home_button_rect = None
@@ -84,7 +85,12 @@ class GameVue(Scene):
 
         self.last_timestamp = time_ns()
 
-        self.saver = Saver(self)
+        self.saver = Saver(self, core.save_name)
+
+        # TODO
+        print(core.save_name)
+        if core.save_name is not None:
+            self.saver.load()
 
     def reset_building(self):
         self.building = None
@@ -167,7 +173,9 @@ class GameVue(Scene):
         # Events for the building interface
         elif self.building_interface_displayed and self.building_interface.rect.containsPoint(mouse_point):
             if self.building_interface.event_stream(event):
-                pass # Nothing to do for now, but I keep it if we need it later
+                buttons = self.clicked_building.get_buttons(self)
+                if len(buttons) > 0:
+                    self.building_interface.create_buttons(buttons)
             self.frame_render = True
         # Events for the buttons
         elif home_button_hovered or building_button_hovered:
@@ -243,11 +251,13 @@ class GameVue(Scene):
                         building = self.map.occupied_coords.get(cell_pos, None)
                         if building is not None and building.structure_type == StructureType.BUILDING and building.state == BuildingState.BUILT:
                             if self.building_interface_displayed:
+                                self.clicked_building = None
                                 self.building_interface_displayed = False
                                 self.frame_render = True
                             else:
                                 buttons = building.get_buttons(self)
                                 if len(buttons) > 0:
+                                    self.clicked_building = building
                                     self.building_interface_displayed = True
                                     self.building_interface.create_buttons(buttons)
                                     self.frame_render = True
@@ -291,6 +301,15 @@ class GameVue(Scene):
                     self.map.chunk_humans[chunk_pos].append(human)
                     self.map.humans.append(human)
                     self.frame_render = True
+                if event.key == pygame.K_r: # TODO: For debug, remove for the final version
+                    self.player.add_ressource(RessourceType.WOOD, 1000)
+                    self.player.add_ressource(RessourceType.FOOD, 1000)
+                    self.player.add_ressource(RessourceType.STONE, 1000)
+                    self.player.add_ressource(RessourceType.IRON, 1000)
+                    self.player.add_ressource(RessourceType.COPPER, 1000)
+                    self.player.add_ressource(RessourceType.GOLD, 1000)
+                    self.player.add_ressource(RessourceType.CRYSTAL, 1000)
+                    self.player.add_ressource(RessourceType.VULCAN, 1000)
                 if event.key == pygame.K_ESCAPE:
                     self.reset_building()
                     self.selected_humans.clear()
@@ -381,8 +400,6 @@ class GameVue(Scene):
                                 if struct.state == BuildingState.BUILDING or struct.state == BuildingState.PLACED:
                                     pygame.draw.rect(self.screen, self.colors[Colors.WHITE], (absolute_point.x + (struct.rect_size.x * Map.CELL_SIZE - Map.CELL_SIZE * 2) // 2, absolute_point.y - Map.CELL_SIZE, Map.CELL_SIZE * 2, Map.CELL_SIZE // 2))
                                     pygame.draw.rect(self.screen, self.colors[Colors.BLUE], (absolute_point.x + (struct.rect_size.x * Map.CELL_SIZE - Map.CELL_SIZE * 2) // 2, absolute_point.y - Map.CELL_SIZE, int(Map.CELL_SIZE * 2 * (struct.building_time / struct.building_duration)), Map.CELL_SIZE // 2))
-                                elif False: # TODO: progressbar to produce technologies and units
-                                    pass
                             elif struct.structure_type == StructureType.ORE:
                                 absolute_point = point * Map.CELL_SIZE - camera_pos + screen_center_rounded
                                 self.screen.blit(self.ore_textures[struct.type] if self.ore_textures.get(struct.type, None) != None else self.missing_texture, (absolute_point.x, absolute_point.y))

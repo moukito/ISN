@@ -94,19 +94,19 @@ class Human(Entity):
         else:
             self.current_location = self.path[-1]
             self.progression = len(self.path) - 1
-            path_start = len(self.path) - 2
-            path_end = len(self.path) - 1
-            diff = (self.path[-2] - self.path[-1])
+            if len(self.path) > 1:
+                diff = (self.path[-2] - self.path[-1])
         
-        if diff.x > 0:
-            self.orientation = Directions.RIGHT
-        elif diff.x < 0:
-            self.orientation = Directions.LEFT
-        else:
-            if diff.y > 0:
-                self.orientation = Directions.BOTTOM
-            elif diff.y < 0:
-                self.orientation = Directions.TOP
+        if diff is not None:
+            if diff.x > 0:
+                self.orientation = Directions.RIGHT
+            elif diff.x < 0:
+                self.orientation = Directions.LEFT
+            else:
+                if diff.y > 0:
+                    self.orientation = Directions.BOTTOM
+                elif diff.y < 0:
+                    self.orientation = Directions.TOP
 
         return 0 if self.progression < len(self.path) - 1 else duration - (len(self.path) - 1 - old_progression) / self.speed
     
@@ -124,9 +124,13 @@ class Human(Entity):
 
         gathering_speed = self.gathering_speed
         if self.ressource_type == RessourceType.FOOD:
-            gathering_speed = self.gathering_speed * Upgrades.FOOD_MULTIPLIER
+            gathering_speed *= Upgrades.FOOD_MULTIPLIER
         elif self.ressource_type in [RessourceType.STONE, RessourceType.IRON, RessourceType.COPPER, RessourceType.GOLD, RessourceType.CRYSTAL, RessourceType.VULCAN]:
-            gathering_speed = self.gathering_speed * Upgrades.MINING_MULTIPLIER
+            gathering_speed *= Upgrades.MINING_MULTIPLIER
+        if (self.type == HumanType.LUMBERJACK and self.ressource_type == RessourceType.WOOD
+            or self.type == HumanType.FARMER and self.ressource_type == RessourceType.FOOD
+            or self.type == HumanType.MINER and self.ressource_type in [RessourceType.STONE, RessourceType.IRON, RessourceType.COPPER, RessourceType.GOLD, RessourceType.CRYSTAL, RessourceType.VULCAN]):
+            gathering_speed *= 2
 
         self.ressources[self.ressource_type] += min(duration * gathering_speed, capacity)
         duration_left = 0 if self.get_ressource_count(self.ressources) < self.resource_capacity else duration - capacity / gathering_speed
@@ -198,7 +202,7 @@ class Human(Entity):
                         self.gather_state = GatherState.GATHERING
                         self.ressource_type = RessourceType.FOOD
                         self.going_to_target = True
-                        self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.FARM])
+                        self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.PANTRY])
                     else:
                         self.building_location = location
             elif struct.structure_type == StructureType.ORE and (
