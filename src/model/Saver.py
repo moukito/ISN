@@ -12,6 +12,7 @@ class Saver:
         self.game_vue = game_vue
 
     def save(self):
+        # TODO: finish
         map = self.game_vue.map
         signature = [77, 65, 80, 00] # 'MAP_' in ASCII
         with open('map.exd', 'wb') as f:
