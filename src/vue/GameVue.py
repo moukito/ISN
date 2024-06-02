@@ -85,7 +85,12 @@ class GameVue(Scene):
 
         self.last_timestamp = time_ns()
 
-        self.saver = Saver(self)
+        self.saver = Saver(self, core.save_name)
+
+        # TODO
+        print(core.save_name)
+        if core.save_name is not None:
+            self.saver.load()
 
     def reset_building(self):
         self.building = None

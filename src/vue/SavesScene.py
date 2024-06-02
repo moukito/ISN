@@ -1,34 +1,12 @@
+import os
 import pygame
 
-from vue.Button import Button
 from vue.Scene import Scene
+from vue.Button import Button
 from vue.Select import Select
-from vue.Slider import Slider
 
-
-# TODO : adjust the select and slider class to the new structure
-class SettingsScene(Scene):
-    """
-    Represents the settings screen of the game.
-    Inherits from the Scene class.
-
-    Methods:
-        __init__(screen): Initializes the SettingsScene instance with the screen.
-        handle_events(): Handles events specific to the settings screen.
-        update(): Updates the settings screen.
-        render(): Renders the settings screen.
-        increase_volume(): Increases the game volume.
-        decrease_volume(): Decreases the game volume.
-        change_resolution(): Changes the game resolution.
-    """
-
+class SavesScene(Scene):
     def __init__(self, core, parent_render):
-        """
-        Initializes the SettingsScene instance with the screen.
-
-        Parameters:
-            core (pygame.Surface): The surface to render the settings screen on.
-        """
         super().__init__(core)
         self.parent_render = parent_render
         self.opacity = pygame.Surface(
@@ -37,18 +15,25 @@ class SettingsScene(Scene):
         self.opacity.set_alpha(160)
         self.scale = 0.0
 
-        self.volume = pygame.mixer.music.get_volume()
-        self.resolution = (self.screen.get_width(), self.screen.get_height())
+        self.save_name = None
 
-        self.volume_slider = Slider(20, 100, 200, 20, 0.0, 1.0, self.volume)
-        self.resolution_menu = Select(
-            20,
-            200,
-            200,
-            50,
-            [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)],
-            self.resolution,
-        )
+        saves_directory = "saves"
+        saves = []
+        if os.path.exists(saves_directory):
+            for name in os.listdir(saves_directory):
+                if os.path.isdir(os.path.join(saves_directory, name)):
+                    saves.append(name)
+
+        self.save_menu = None
+        if len(saves) > 0:
+            self.save_menu = Select(
+                20,
+                200,
+                300,
+                50,
+                saves,
+                self.save_name,
+            )
 
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
@@ -76,21 +61,11 @@ class SettingsScene(Scene):
         )
 
     def handle_events(self, event: pygame.event.Event):
-        """
-        Handles events specific to the settings screen.
-        """
         if self.apply_button.is_clicked(event):
-            # Apply the settings
-            self.parameter["volume"] = self.volume
-            self.parameter["width"] = self.resolution[0]
-            self.parameter["height"] = self.resolution[1]
-
-            self.core.update_parameter(self.parameter)
-
+            self.core.save_name = self.save_name
             pygame.event.post(pygame.event.Event(self.event, {"scene": "title"}))
             self.running = False
         elif self.cancel_button.is_clicked(event):
-            # Cancel the settings
             pygame.event.post(pygame.event.Event(self.event, {"scene": "title"}))
             self.running = False
         elif event.type == pygame.MOUSEMOTION:
@@ -99,43 +74,24 @@ class SettingsScene(Scene):
                     self.change_button_color(button, True)
                 else:
                     self.change_button_color(button, False)
-        self.volume_slider.handle_event(event)
-        self.resolution_menu.handle_event(event)
+        if self.save_menu is not None:
+            self.save_menu.handle_event(event)
         if event.type == pygame.QUIT:
             pygame.event.post(pygame.event.Event(self.event, {"scene": "quit"}))
 
     def update(self):
-        """
-        Updates the settings screen.
-        """
-        self.volume = self.volume_slider.get_value()
-        pygame.mixer.music.set_volume(self.volume)
-
-        self.resolution = self.resolution_menu.get_value()
-
         if self.scale < 0.99:
             self.scale += 0.02
 
+        self.core.save_name = self.save_menu.get_value()
+
     def render(self):
-        """
-        Renders the settings screen.
-        """
         self.parent_render()
 
         self.screen.blit(self.opacity, (0, 0))
 
-        volume_text = pygame.font.Font(None, 36).render(
-            f"Volume: {self.volume}", 1, (255, 255, 255)
-        )
-        self.volume_slider.render(self.screen)
-
-        resolution_text = pygame.font.Font(None, 36).render(
-            f"Resolution: {self.resolution}", 1, (255, 255, 255)
-        )
-        self.resolution_menu.render(self.screen)
-
-        self.screen.blit(volume_text, (20, 20))
-        self.screen.blit(resolution_text, (20, 60))
+        if self.save_menu is not None:
+            self.save_menu.render(self.screen)
 
         self.apply_button.render(self.screen)
         self.cancel_button.render(self.screen)
@@ -146,7 +102,7 @@ class SettingsScene(Scene):
                 int(self.screen.get_width() * self.scale),
                 int(self.screen.get_height() * self.scale),
             ),
-        )  # Scale the screen
+        )
 
         self.parent_render()
         self.screen.blit(
@@ -155,7 +111,7 @@ class SettingsScene(Scene):
                 (self.screen.get_width() - scaled_screen.get_width()) // 2,
                 (self.screen.get_height() - scaled_screen.get_height()) // 2,
             ),
-        )  # Draw the scaled screen onto the original screen
+        )
 
     @staticmethod
     def change_button_color(button, hovered):

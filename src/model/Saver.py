@@ -1,4 +1,6 @@
 import struct
+import os
+from datetime import datetime
 
 from model.Perlin import Perlin
 from model.Map import Map
@@ -6,16 +8,31 @@ from model.Structures import Structure, OreType, Building
 from model.Geometry import Point
 
 class Saver:
-    __slots__ = ["game_vue"]
+    __slots__ = ["game_vue", "save_name"]
 
-    def __init__(self, game_vue) -> None:
+    def __init__(self, game_vue, save_name = None) -> None:
         self.game_vue = game_vue
+        if save_name is None:
+            self.save_name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        else:
+            self.save_name = save_name
 
     def save(self):
+        saves_directory = "saves"
+        if not os.path.exists(saves_directory):
+            os.makedirs(saves_directory)
+
+        save_dir = os.path.join(saves_directory, self.save_name)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
         # TODO: finish
+        self.save_map()
+
+    def save_map(self):
         map = self.game_vue.map
         signature = [77, 65, 80, 00] # 'MAP_' in ASCII
-        with open('map.exd', 'wb') as f:
+        with open(f"saves/{self.save_name}/map.exd", "wb") as f:
             for b in signature:
                 f.write(struct.pack('B', b))
             
@@ -58,9 +75,14 @@ class Saver:
                     for value in row:
                         f.write(struct.pack('f', value))
 
+    def load(self):
+        # TODO: finish
+        #self.load_map()
+        pass
+
     def load_map(self):
         signature = [77, 65, 80, 00] # 'MAP_' in ASCII
-        with open('map.exd', 'rb') as f:
+        with open(f"saves/{self.save_name}/map.exd", "rb") as f:
             file_signature = list(struct.unpack('BBBB', f.read(4)))
             if file_signature != signature:
                 raise ValueError("Invalid file format")
