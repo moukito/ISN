@@ -5,9 +5,10 @@ class Technologies(Enum):
     AGRICULTURE = 2
     MINING = 3
     HUNT = 4
-    BUILDING_HEALTH = 5
-    BUILDING_TIME = 6
-    EXTRA_MATERIALS = 7
+    COMBAT = 5
+    BUILDING_HEALTH = 6
+    BUILDING_TIME = 7
+    EXTRA_MATERIALS = 8
 
 class Upgrades:
     BUILDING_HEALTH_MULTIPLIER = 1
@@ -15,4 +16,7 @@ class Upgrades:
 
     FOOD_MULTIPLIER = 1
     MINING_MULTIPLIER = 1
+    WOOD_MULTIPLIER = 1
+    HUNT_MULTIPLIER = 1
+    COMBAT_MULTIPLIER = 1
     EXTRA_MATERIALS = False

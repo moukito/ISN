@@ -20,6 +20,7 @@ from model.HumanType import HumanType
 from model.Saver import Saver
 
 class GameVue(Scene):
+    # TODO: Add the scaling of the interface and the map
     __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "clicked_building", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
 
     def __init__(self, core):
@@ -88,7 +89,6 @@ class GameVue(Scene):
         self.saver = Saver(self, core.save_name)
 
         # TODO
-        print(core.save_name)
         if core.save_name is not None:
             self.saver.load()
 
@@ -446,8 +446,8 @@ class GameVue(Scene):
                             selected = id(human) in ids
 
                         if selected:
-                            pygame.draw.circle(self.screen, self.colors[Colors.AQUA], (absolute_point.x + Map.CELL_SIZE // 2 + 1, absolute_point.y + Map.CELL_SIZE // 2), 10)
-                        self.screen.blit(self.humans_textures[human.type][human.orientation], (absolute_point.x, absolute_point.y))
+                            pygame.draw.circle(self.screen, self.colors[Colors.AQUA], (absolute_point.x + 1, absolute_point.y), 10)
+                        self.screen.blit(self.humans_textures[human.type][human.orientation], (absolute_point.x - Map.CELL_SIZE // 2, absolute_point.y - Map.CELL_SIZE // 2))
                 
 
     def render_selection(self):
