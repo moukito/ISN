@@ -69,6 +69,7 @@ class GameVue(Scene):
 
         self.screen_width, self.screen_height = self.screen.get_width(), self.screen.get_height()
         self.screen_size = Point(self.screen_width, self.screen_height)
+        self.scale()
         self.cell_width_count = ceil(self.screen_size.x / Map.CELL_SIZE)
         self.cell_height_count = ceil(self.screen_height / Map.CELL_SIZE)
 
@@ -91,6 +92,15 @@ class GameVue(Scene):
         # TODO
         if core.save_name is not None:
             self.saver.load()
+
+    def scale(self):
+        max_length = max(self.screen_width, self.screen_height)
+        if max_length <= 1200:
+            Map.CELL_SIZE = 30
+        elif max_length > 1200 and max_length <= 1800:
+            Map.CELL_SIZE = 45
+        else:
+            Map.CELL_SIZE = 60
 
     def reset_building(self):
         self.building = None
