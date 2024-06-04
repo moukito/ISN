@@ -50,7 +50,7 @@ class Saver:
             
             f.write(struct.pack('i', len(map.structures)))
             for chunk_coords, structures in map.structures.items():
-                f.write(struct.pack('ii', chunk_coords.x, chunk_coords.y))
+                f.write(struct.pack('ii', int(chunk_coords.x), int(chunk_coords.y)))
                 f.write(struct.pack('i', len(structures)))
                 for structure in structures:
                     f.write(struct.pack('i', structure.structure_type.value))

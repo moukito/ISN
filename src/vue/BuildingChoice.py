@@ -13,12 +13,18 @@ class BuildingChoice:
         building_names =  {
             BuildingType.FARM: "Ferme", 
             BuildingType.PANTRY: "Garde-Manger",
-            BuildingType.MINER_CAMP: "Camp de Mineurs"
+            BuildingType.MINER_CAMP: "Camp de Mineurs",
+            BuildingType.LUMBER_CAMP: "Camp de bûcherons",
+            BuildingType.HUNTER_CAMP: "Camp de chasseurs",
+            BuildingType.SOLDIER_CAMP: "Camp de soldats",
         }
         self.building_costs = {
             BuildingType.FARM: {RessourceType.WOOD: 50},
             BuildingType.PANTRY: {RessourceType.WOOD: 75, RessourceType.STONE: 25},
-            BuildingType.MINER_CAMP: {RessourceType.WOOD: 75, RessourceType.STONE: 25}
+            BuildingType.MINER_CAMP: {RessourceType.WOOD: 75, RessourceType.STONE: 25},
+            BuildingType.LUMBER_CAMP: {RessourceType.WOOD: 100, RessourceType.STONE: 25},
+            BuildingType.HUNTER_CAMP: {RessourceType.WOOD: 50, RessourceType.STONE: 25, RessourceType.FOOD: 25},
+            BuildingType.SOLDIER_CAMP: {RessourceType.WOOD: 50, RessourceType.STONE: 25, RessourceType.IRON: 50},
         }
         
         self.font = pygame.font.Font("assets/font/Junter.otf", 12)

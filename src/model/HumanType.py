@@ -5,4 +5,5 @@ class HumanType(Enum):
     MINER = 2
     LUMBERJACK = 3
     FARMER = 4
-    #SOLDIER = 5
+    HUNTER = 5
+    SOLDIER = 6

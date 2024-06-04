@@ -5,6 +5,7 @@ from vue.Choice import Choice
 from vue.Scene import Scene
 from vue.SettingScene import SettingsScene
 from vue.SavesScene import SavesScene
+from vue.ControlScene import ControlScene
 
 
 class GameTitle(Scene):
@@ -172,7 +173,11 @@ class GameTitle(Scene):
             saves_scene.run()
             self.setup()
         elif choice == 3:
-            pass
+            controls_scene = ControlScene(
+                self.core, self.render
+            )
+            controls_scene.run()
+            self.setup()
         elif choice == 4:
             settings_scene = SettingsScene(
                 self.core, self.render
