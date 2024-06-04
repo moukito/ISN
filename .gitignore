@@ -162,4 +162,5 @@ cython_debug/
 
 config.json
 *.exd
-/config.json
+
+ia/

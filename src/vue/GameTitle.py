@@ -1,10 +1,9 @@
 import pygame
 
-from vue.Core import Core
-from vue.Button import Button
-from vue.Choice import Choice
-from vue.Scene import Scene
-from vue.SettingScene import SettingsScene
+from src.vue.Button import Button
+from src.vue.Choice import Choice
+from src.vue.Scene import Scene
+from src.vue.SettingScene import SettingsScene
 
 
 class GameTitle(Scene):
@@ -21,7 +20,7 @@ class GameTitle(Scene):
 
     __slots__ = ["bg", "choice", "options", "font", "buttons"]
 
-    def __init__(self, core: Core) -> None:
+    def __init__(self, core) -> None:
         """
         Initializes the GameTitle instance with the screen.
 

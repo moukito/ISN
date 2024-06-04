@@ -1,10 +1,9 @@
 import pygame
 
-from vue.Core import Core
-from vue.Button import Button
-from vue.Scene import Scene
-from vue.Select import Select
-from vue.Slider import Slider
+from src.vue.Button import Button
+from src.vue.Scene import Scene
+from src.vue.Select import Select
+from src.vue.Slider import Slider
 
 
 # TODO : adjust the select and slider class to the new structure
@@ -35,7 +34,7 @@ class SettingsScene(Scene):
         "parent_render",
     ]
 
-    def __init__(self, core: Core, parent_render: callable) -> None:
+    def __init__(self, core, parent_render: callable) -> None:
         """
         Initializes the SettingsScene instance with the screen.
 
@@ -88,9 +87,6 @@ class SettingsScene(Scene):
             font_size,
         )
 
-    def __del__(self) -> None:
-        self.fade_out()
-
     def handle_events(self, event: pygame.event.Event) -> None:
         """
         Handles events specific to the settings screen.
@@ -136,19 +132,33 @@ class SettingsScene(Scene):
         """
         Renders the settings screen.
         """
-        window = pygame.Surface(self.screen.get_width, self.screen.get_height)
-        window.fill((0, 0, 0))
+        self.parent_render()
+        self.screen.blit(self.opacity, (0, 0))
 
-        self.render_parameter(window)
+        volume_text = pygame.font.Font(None, 36).render(
+            f"Volume: {self.volume}", 1, (255, 255, 255)
+        )
+        self.volume_slider.render(self.screen)
+
+        resolution_text = pygame.font.Font(None, 36).render(
+            f"Resolution: {self.resolution}", 1, (255, 255, 255)
+        )
+        self.resolution_menu.render(self.screen)
+
+        self.screen.blit(volume_text, (20, 20))
+        self.screen.blit(resolution_text, (20, 60))
+
+        self.apply_button.render(self.screen)
+        self.cancel_button.render(self.screen)
 
         scaled_screen = pygame.transform.scale(
-            window,
+            self.screen,
             (
                 int(self.screen.get_width() * self.scale),
                 int(self.screen.get_height() * self.scale),
             ),
         )  # Scale the screen
-        # TODO : refactor render and test new fade in
+
         self.parent_render()
         self.screen.blit(
             scaled_screen,
@@ -157,37 +167,6 @@ class SettingsScene(Scene):
                 (self.screen.get_height() - scaled_screen.get_height()) // 2,
             ),
         )  # Draw the scaled screen onto the original screen
-
-    def render_parameter(self, screen: pygame.Surface) -> None:
-        screen.blit(self.opacity, (0, 0))
-        volume_text = pygame.font.Font(None, 36).render(
-            f"Volume: {self.volume}", 1, (255, 255, 255)
-        )
-        self.volume_slider.render(screen)
-        resolution_text = pygame.font.Font(None, 36).render(
-            f"Resolution: {self.resolution}", 1, (255, 255, 255)
-        )
-        self.resolution_menu.render(screen)
-        screen.blit(volume_text, (20, 20))
-        screen.blit(resolution_text, (20, 60))
-        self.apply_button.render(screen)
-        self.cancel_button.render(screen)
-
-    def fade_out(self) -> None:
-        fade_surface = pygame.Surface(
-            (self.screen.get_width(), self.screen.get_height())
-        )  # Create a new surface
-        fade_surface.fill((0, 0, 0))  # Fill the surface with black color
-
-        for alpha in range(0, 300):
-            fade_surface.set_alpha(alpha)  # Set the alpha value
-            self.render()  # Render the scene
-            self.screen.blit(
-                fade_surface, (0, 0)
-            )  # Blit the fade surface onto the screen
-            pygame.display.update()  # Update the display
-            pygame.time.delay(5)  # Delay to create the fade-out effect
-        # TODO : test fade out
 
     @staticmethod
     def change_button_color(button: Button, hovered: bool) -> None:

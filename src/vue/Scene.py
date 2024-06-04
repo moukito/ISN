@@ -1,8 +1,6 @@
 import pygame
 from abc import ABC, abstractmethod
 
-from vue.Core import Core
-
 
 class Scene(ABC):
     """
@@ -22,7 +20,7 @@ class Scene(ABC):
 
     __slots__ = ["running", "screen", "parameter", "core", "event"]
 
-    def __init__(self, core: Core) -> None:
+    def __init__(self, core) -> None:
         """
         Initializes the Scene instance with the screen.
 
