@@ -16,7 +16,7 @@ class Choice:
 
     __slots__ = ["choice", "max_choice"]
 
-    def __init__(self, choice=1, max_choice=3):
+    def __init__(self, choice=1, max_choice=5):
         """
         Initializes the Choice instance with the choice and max_choice.
 

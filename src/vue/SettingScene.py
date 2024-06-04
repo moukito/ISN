@@ -47,7 +47,7 @@ class SettingsScene(Scene):
             (self.screen.get_width(), self.screen.get_height())
         )
         self.opacity.set_alpha(160)
-        self.scale = 0.1
+        self.scale = 0.0
 
         self.volume = pygame.mixer.music.get_volume()
         self.resolution = (self.screen.get_width(), self.screen.get_height())
@@ -125,8 +125,8 @@ class SettingsScene(Scene):
 
         self.resolution = self.resolution_menu.get_value()
 
-        if self.scale < 0.9:
-            self.scale += 0.1
+        if self.scale < 0.99:
+            self.scale += 0.02
 
     def render(self) -> None:
         """

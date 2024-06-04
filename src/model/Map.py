@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from model.Perlin import Perlin
-from model.Structures import StructureType, Tree, Ore, OreType
+from model.Structures import BuildingState, StructureType, Tree, Ore, OreType
 from model.Geometry import Point, Rectangle
 
 
@@ -164,6 +164,7 @@ class Map:
                 elif height > 0:
                     processed_chunk[i][j] = Biomes.FOREST.value
                     self.try_generate_ore(chunk_coords, position, 0.015, 1, [OreType.IRON, OreType.STONE], 2, OreType.IRON)
+                    self.try_generate_ore(chunk_coords, position, 0.010, 2, [OreType.COPPER, OreType.IRON, OreType.STONE], 2, OreType.GOLD)
                     self.try_generate_tree(chunk_coords, position, 0.015, 1, 15)
                 elif height > -2.75:
                     processed_chunk[i][j] = Biomes.PLAIN.value
@@ -269,7 +270,8 @@ class Map:
         need_render = False
 
         for building in self.buildings:
-            building.update(duration)
+            if building.update(duration):
+                need_render = True
 
         chunk_humans = self.chunk_humans.copy()
         for chunk_coords, humans in self.chunk_humans.items():

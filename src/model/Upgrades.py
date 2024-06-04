@@ -1,0 +1,18 @@
+from enum import Enum
+
+class Technologies(Enum):
+    FORESTRY = 1
+    AGRICULTURE = 2
+    MINING = 3
+    HUNT = 4
+    BUILDING_HEALTH = 5
+    BUILDING_TIME = 6
+    EXTRA_MATERIALS = 7
+
+class Upgrades:
+    BUILDING_HEALTH_MULTIPLIER = 1
+    BUILDING_TIME_MULTIPLIER = 1
+
+    FOOD_MULTIPLIER = 1
+    MINING_MULTIPLIER = 1
+    EXTRA_MATERIALS = False

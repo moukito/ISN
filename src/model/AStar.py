@@ -44,7 +44,7 @@ def AStar(start, end, map):
         for new_position in [Point(0, -1), Point(0, 1), Point(-1, 0), Point(1, 0), Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)]:
             node_position = current_node.position + new_position
 
-            # TODO : When we want the obstacles (structures) to be taken into account
+            # TODO : When we want the obstacles (structures) to be taken into account / Maybe add a condition for lava too
             #if map.occupied_coords.get(node_position, None) is not None:
             #    continue
 
