@@ -4,8 +4,8 @@ import subprocess
 
 import pygame
 
-from vue.GameTitle import GameTitle
-from vue.GameVue import GameVue
+from src.vue.GameTitle import GameTitle
+from src.vue.GameVue import GameVue
 
 
 class Core:
@@ -25,7 +25,7 @@ class Core:
 
     __slots__ = ["screen", "title_screen", "parameter", "save_name", "game_screen", "event"]
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the Core instance.
         """
@@ -45,7 +45,7 @@ class Core:
         pygame.quit()
 
     @staticmethod
-    def window_setup():
+    def window_setup() -> None:
         """
         Initializes the pygame module.
         """
@@ -53,7 +53,7 @@ class Core:
         pygame.display.set_icon(pygame.image.load("assets/icon/exodus.png"))
         # TODO : add an icon for the window in the task manager
 
-    def setup_parameter(self):
+    def setup_parameter(self) -> None:
         """
         Sets up the game parameters based on configuration.
         """
@@ -71,7 +71,7 @@ class Core:
         self.parameter = dico
         self.update_screen()
 
-    def update_screen(self):
+    def update_screen(self) -> None:
         if self.parameter["fullscreen"]:
             flags = pygame.FULLSCREEN | pygame.SCALED
         else:
@@ -81,12 +81,12 @@ class Core:
         )
 
     @staticmethod
-    def read_config():
+    def read_config() -> dict:
         with open("config.json", "r") as configFile:
             dico = json.load(configFile)
         return dico
 
-    def default_config(self):
+    def default_config(self) -> None:
         """
         Returns default configuration parameters.
         """
@@ -114,7 +114,7 @@ class Core:
         )
         return "0.0." + str(patch)
 
-    def update_parameter(self, dico):
+    def update_parameter(self, dico: dict) -> None:
         """
         Updates the game parameters if necessary.
         """
@@ -128,7 +128,7 @@ class Core:
                     default_dico[key] = dico[key]
             json.dump(default_dico, configFile)
 
-    def run(self):
+    def run(self) -> None:
         """
         Starts the game execution.
         """
@@ -140,7 +140,7 @@ class Core:
             if event.dict.get("scene") == "game":
                 self.start_game()
 
-    def start_game(self):
+    def start_game(self) -> None:
         self.game_screen = GameVue(self)
         # TODO : self.game_screen.setup()
         self.game_screen.run()
