@@ -126,7 +126,7 @@ class SettingsScene(Scene):
         self.resolution = self.resolution_menu.get_value()
 
         if self.scale < 0.99:
-            self.scale += 0.02
+            self.scale += 0.05
 
     def render(self) -> None:
         """

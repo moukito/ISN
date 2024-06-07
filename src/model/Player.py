@@ -1,7 +1,8 @@
 from model.Ressource import RessourceType
+from model.Upgrades import Upgrades
 
 class Player:
-    __slots__ = ["ressources", "ressource_update_callback"]
+    __slots__ = ["ressources", "ressource_update_callback", "upgrades"]
 
     def __init__(self, ressource_update_callback) -> None:
         delta = 0.05 # Add a small delta to remove floating point errors with ressource gathering
@@ -16,6 +17,7 @@ class Player:
             RessourceType.VULCAN: delta
         }
         self.ressource_update_callback = ressource_update_callback
+        self.upgrades = Upgrades()
 
     def add_ressource(self, ressource_type, quantity):
         old_ressource = self.ressources[ressource_type]

@@ -81,7 +81,7 @@ class SavesScene(Scene):
 
     def update(self):
         if self.scale < 0.99:
-            self.scale += 0.02
+            self.scale += 0.05
 
         self.core.save_name = self.save_menu.get_value()
 
