@@ -87,13 +87,13 @@ class GameVue(Scene):
 
         self.clock = pygame.time.Clock()
 
-        self.last_timestamp = time_ns()
-
         self.saver = Saver(self, core.save_name)
 
         # TODO
         if core.save_name is not None:
             self.saver.load()
+
+        self.last_timestamp = time_ns()
 
     def scale(self):
         max_length = max(self.screen_width, self.screen_height)
