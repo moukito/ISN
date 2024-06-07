@@ -5,8 +5,9 @@ import random
 from model.Geometry import Point, Rectangle
 from model.Ressource import RessourceType
 from model.Player import Player
-from model.Upgrades import Technologies, Upgrades
+from model.Upgrades import Technologies
 from model.HumanType import HumanType
+from model.Player import Player
 
 class StructureType(Enum):
     TREE = 1
@@ -128,17 +129,18 @@ class BuildingState(Enum):
     BUILT = 2
 
 class Building(TypedStructure):
-    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player", "destroy_callback", "upper_left", "rect_size", "gamevue", "buttons"]
+    __slots__ = ["costs", "health", "building_duration", "building_time", "workers", "state", "player", "destroy_callback", "human_death_callback", "upper_left", "rect_size", "gamevue", "buttons"]
 
-    def __init__(self, costs, health, building_duration, type, coords, points, player, destroy_callback, orientation=Orientation.RANDOM) -> None:
+    def __init__(self, costs, health, building_duration, type, coords, points, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
         super().__init__(type, StructureType.BUILDING, coords, points, orientation)
         self.costs = costs
-        self.health = health * Upgrades.BUILDING_HEALTH_MULTIPLIER
+        self.health = health * self.player.upgrades.BUILDING_HEALTH_MULTIPLIER
         self.building_duration = building_duration
         self.building_time = 0
         self.workers = 0
         self.player = player
         self.destroy_callback = destroy_callback
+        self.human_death_callback = human_death_callback
         self.state = BuildingState.PLACED
         self.gamevue = None
         self.buttons = {}
@@ -176,7 +178,7 @@ class Building(TypedStructure):
         if self.state != BuildingState.BUILT:
             need_render = True
             old_time = self.building_time
-            self.building_time += duration * self.workers * Upgrades.BUILDING_TIME_MULTIPLIER
+            self.building_time += duration * self.workers * self.player.upgrades.BUILDING_TIME_MULTIPLIER
 
             if self.building_time != 0 and old_time == 0:
                 self.state = BuildingState.BUILDING
@@ -187,8 +189,8 @@ class Building(TypedStructure):
         return need_render
 
 class BaseCamp(Building):
-    def __init__(self, coords, player) -> None:
-        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, Orientation.NORTH)
+    def __init__(self, coords, player, destroy_callback, human_death_callback) -> None:
+        super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, destroy_callback, human_death_callback, Orientation.NORTH)
         self.state = BuildingState.BUILT
         self.building_time = self.building_duration
         self.buttons = {
@@ -198,9 +200,9 @@ class BaseCamp(Building):
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
         buttons = self.buttons.copy()
-        if Upgrades.BUILDING_HEALTH_MULTIPLIER != 2:
+        if self.player.upgrades.BUILDING_HEALTH_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.FOOD: 400, RessourceType.WOOD: 300, RessourceType.STONE: 300}, Technologies.BUILDING_HEALTH, self.technology_building_health)
-        if Upgrades.BUILDING_TIME_MULTIPLIER != 2:
+        if self.player.upgrades.BUILDING_TIME_MULTIPLIER != 2:
             buttons[Point(1, 1)] = ({RessourceType.WOOD: 500, RessourceType.STONE: 600, RessourceType.CRYSTAL: 500}, Technologies.BUILDING_TIME, self.technology_building_time)
         return buttons
     
@@ -214,21 +216,21 @@ class BaseCamp(Building):
             self.player.add_ressource(RessourceType.FOOD, -400)
             self.player.add_ressource(RessourceType.WOOD, -300)
             self.player.add_ressource(RessourceType.STONE, -300)
-            Upgrades.BUILDING_TIME_MULTIPLIER = 2
+            self.player.upgrades.BUILDING_TIME_MULTIPLIER = 2
 
     def technology_building_health(self):
         if self.player.get_ressource(RessourceType.WOOD) >= 500 and self.player.get_ressource(RessourceType.STONE) >= 600 and self.player.get_ressource(RessourceType.CRYSTAL) >= 500:
             self.player.add_ressource(RessourceType.WOOD, -500)
             self.player.add_ressource(RessourceType.STONE, -600)
             self.player.add_ressource(RessourceType.CRYSTAL, -500)
-            Upgrades.BUILDING_HEALTH_MULTIPLIER = 2
+            self.player.upgrades.BUILDING_HEALTH_MULTIPLIER = 2
             for building in self.gamevue.map.buildings:
                 if building.player == self.player:
                     building.health *= 2
         
 class Pantry(Building):
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 2.5 * 60, BuildingType.PANTRY, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
+        super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25}, 550, 2.5 * 60, BuildingType.PANTRY, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, destroy_callback, human_death_callback, orientation)
         self.buttons = {
             Point(0, 0): ({RessourceType.FOOD: 200}, HumanType.FARMER, self.spawn_farmer)
         }
@@ -236,7 +238,7 @@ class Pantry(Building):
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
         buttons = self.buttons.copy()
-        if Upgrades.FOOD_MULTIPLIER != 2:
+        if self.player.upgrades.FOOD_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.FOOD: 600, RessourceType.WOOD: 300, RessourceType.IRON: 300}, Technologies.AGRICULTURE, self.technology_agriculture)
         return buttons
     
@@ -250,18 +252,18 @@ class Pantry(Building):
             self.player.add_ressource(RessourceType.FOOD, -600)
             self.player.add_ressource(RessourceType.WOOD, -300)
             self.player.add_ressource(RessourceType.IRON, -300)
-            Upgrades.FOOD_MULTIPLIER = 2
+            self.player.upgrades.FOOD_MULTIPLIER = 2
 
 class Farm(Building):
     __slots__ = ["food"]
     # TODO: produce a limited amount of food
 
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        super().__init__({RessourceType.WOOD: 50}, 300, 1 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
+        super().__init__({RessourceType.WOOD: 50}, 300, 1 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, destroy_callback, human_death_callback, orientation)
     
 class MinerCamp(Building):
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None:
-        super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25, RessourceType.IRON: 25}, 550, 1 * 60, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, orientation)
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
+        super().__init__({RessourceType.WOOD: 75, RessourceType.STONE: 25, RessourceType.IRON: 25}, 550, 1 * 60, BuildingType.MINER_CAMP, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, destroy_callback, human_death_callback, orientation)
         self.buttons = {
             Point(0, 0): ({RessourceType.FOOD: 150, RessourceType.COPPER: 50}, HumanType.MINER, self.spawn_miner)
         }
@@ -269,7 +271,7 @@ class MinerCamp(Building):
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
         buttons = self.buttons.copy()
-        if Upgrades.MINING_MULTIPLIER != 2:
+        if self.player.upgrades.MINING_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.IRON: 600, RessourceType.COPPER: 400, RessourceType.VULCAN: 200}, Technologies.MINING, self.technology_mining)
         return buttons
     
@@ -284,11 +286,11 @@ class MinerCamp(Building):
             self.player.add_ressource(RessourceType.IRON, -600)
             self.player.add_ressource(RessourceType.COPPER, -400)
             self.player.add_ressource(RessourceType.VULCAN, -200)
-            Upgrades.MINING_MULTIPLIER = 2
+            self.player.upgrades.MINING_MULTIPLIER = 2
             
 class LumberCamp(Building) :
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None : 
-        super().__init__({RessourceType.WOOD: 100, RessourceType.STONE: 25}, 550, 1 * 60, BuildingType.LUMBER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None : 
+        super().__init__({RessourceType.WOOD: 100, RessourceType.STONE: 25}, 550, 1 * 60, BuildingType.LUMBER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, destroy_callback, human_death_callback, orientation)
         self.buttons = {
             Point(0, 0): ({RessourceType.FOOD: 150, RessourceType.WOOD: 50}, HumanType.LUMBERJACK, self.spawn_lumberjack)
         }
@@ -296,7 +298,7 @@ class LumberCamp(Building) :
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
         buttons = self.buttons.copy()
-        if Upgrades.WOOD_MULTIPLIER != 2:
+        if self.player.upgrades.WOOD_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.WOOD: 600, RessourceType.IRON: 300, RessourceType.FOOD: 200}, Technologies.FORESTRY, self.technology_forestry)
         return buttons
     
@@ -311,11 +313,11 @@ class LumberCamp(Building) :
             self.player.add_ressource(RessourceType.WOOD, -600)
             self.player.add_ressource(RessourceType.IRON, -300)
             self.player.add_ressource(RessourceType.FOOD, -200)
-            Upgrades.WOOD_MULTIPLIER = 2
+            self.player.upgrades.WOOD_MULTIPLIER = 2
 
 class HunterCamp(Building) :
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None :
-        super().__init__({RessourceType.WOOD: 50, RessourceType.STONE: 25, RessourceType.FOOD: 25}, 550, 1 * 60, BuildingType.HUNTER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None :
+        super().__init__({RessourceType.WOOD: 50, RessourceType.STONE: 25, RessourceType.FOOD: 25}, 550, 1 * 60, BuildingType.HUNTER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, destroy_callback, human_death_callback, orientation)
         self.buttons = {
             Point(0, 0): ({RessourceType.FOOD: 200}, HumanType.HUNTER, self.spawn_hunter)
         }
@@ -323,7 +325,7 @@ class HunterCamp(Building) :
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
         buttons = self.buttons.copy()
-        if Upgrades.HUNT_MULTIPLIER != 2:
+        if self.player.upgrades.HUNT_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.WOOD: 400, RessourceType.COPPER: 400, RessourceType.FOOD: 200}, Technologies.HUNT, self.technology_hunt)
         return buttons
     
@@ -337,11 +339,11 @@ class HunterCamp(Building) :
             self.player.add_ressource(RessourceType.WOOD, -400)
             self.player.add_ressource(RessourceType.COPPER, -400)
             self.player.add_ressource(RessourceType.FOOD, -200)
-            Upgrades.HUNT_MULTIPLIER = 2
+            self.player.upgrades.HUNT_MULTIPLIER = 2
 
 class SoldierCamp(Building) :
-    def __init__(self, coords, player, orientation=Orientation.RANDOM) -> None :
-        super().__init__({RessourceType.WOOD: 50, RessourceType.STONE: 25, RessourceType.IRON: 50}, 750, 1 * 60, BuildingType.SOLDIER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, orientation)
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None :
+        super().__init__({RessourceType.WOOD: 50, RessourceType.STONE: 25, RessourceType.IRON: 50}, 750, 1 * 60, BuildingType.SOLDIER_CAMP, coords, Rectangle(-1,-1,1,1).toPointList(), player, destroy_callback, human_death_callback, orientation)
         self.buttons = {
             Point(0, 0): ({RessourceType.FOOD: 150, RessourceType.IRON: 50}, HumanType.SOLDIER, self.spawn_soldier)
         }
@@ -349,7 +351,7 @@ class SoldierCamp(Building) :
     def get_buttons(self, gamevue):
         self.gamevue = gamevue
         buttons = self.buttons.copy()
-        if Upgrades.HUNT_MULTIPLIER != 2:
+        if self.player.upgrades.HUNT_MULTIPLIER != 2:
             buttons[Point(1, 0)] = ({RessourceType.WOOD: 400, RessourceType.COPPER: 400, RessourceType.FOOD: 200}, Technologies.HUNT, self.technology_combat)
         return buttons
     
@@ -364,7 +366,7 @@ class SoldierCamp(Building) :
             self.player.add_ressource(RessourceType.WOOD, -400)
             self.player.add_ressource(RessourceType.COPPER, -400)
             self.player.add_ressource(RessourceType.FOOD, -200)
-            Upgrades.COMBAT_MULTIPLIER = 2
+            self.player.upgrades.COMBAT_MULTIPLIER = 2
 
 typeToClass = {
     BuildingType.BASE_CAMP: BaseCamp,

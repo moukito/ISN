@@ -30,11 +30,11 @@ class GatherState(Enum):
     DEPOSITING = 2
 
 class Human(Entity):
-    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "damage", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "going_to_deposit", "state", "work", "gather_state", "map", "player"]
+    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "damage", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "going_to_deposit", "state", "work", "gather_state", "map", "player", "target_entity", "death_callback"]
 
     CELL_CENTER = Point(Map.CELL_SIZE, Map.CELL_SIZE) // 2
 
-    def __init__(self, health, type, capacity, gathering_speed, damage, speed, map, location, player):
+    def __init__(self, health, type, capacity, gathering_speed, damage, speed, map, location, player, death_callback):
         super().__init__(health, {})
         self.type = type
         self.current_location = location - location % Map.CELL_SIZE + Human.CELL_CENTER
@@ -55,8 +55,10 @@ class Human(Entity):
         self.work = HumanWork.IDLE
         self.gather_state = GatherState.GATHERING
         self.map = map
-        self.player = player
         self.orientation = Directions.BOTTOM
+        self.player = player
+        self.target_entity = None
+        self.death_callback = death_callback
 
     def find_nearest_building(self, building_types):
         buildings = []
@@ -173,6 +175,10 @@ class Human(Entity):
         self.target_location = location
         self.go_to_location(self.target_location)
 
+    def set_target_entity(self, entity):
+        self.target_entity = entity
+        self.go_to_location(self.target_entity.current_location)
+
     def create_path(self, location):
         self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
         if len(self.path) > 1:
@@ -272,8 +278,21 @@ class Human(Entity):
                     elif self.work == HumanWork.BUILDING:
                         duration = 0
                     elif self.work == HumanWork.HUNTING or self.work == HumanWork.FIGHTING:
-                        # TODO: When there are animals and / or the AI
-                        duration = 0
+                        if self.work == HumanWork.FIGHTING:
+                            if self.target_entity.health > 0:
+                                if self.target_entity.current_location.distance(self.current_location) <= Map.CELL_SIZE * 2:
+                                    if self.target_entity.damage(self.damage):
+                                        self.state = HumanState.IDLE
+                                        self.work = HumanWork.IDLE
+                                        self.target_entity = None
+                                        duration = 0
+                                else:
+                                    self.create_path(self.target_entity.current_location)
+                            else:
+                                self.state = HumanState.IDLE
+                                self.work = HumanWork.IDLE
+                                self.target_entity = None
+                                duration = 0
                 else:
                     duration = self.move(duration)
                     if duration > 0 and self.work != HumanWork.IDLE:
@@ -287,6 +306,13 @@ class Human(Entity):
         self.work = HumanWork.IDLE
         self.going_to_work = False
         self.going_to_target = False
+
+    def damage(self, damage):
+        self.health -= damage
+        dead = self.health <= 0
+        if dead:
+            self.death_callback(self)
+        return dead
 
 class Colon(Human):
     def __init__(self, map, location, player):
