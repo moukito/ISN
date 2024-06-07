@@ -22,7 +22,19 @@ class SettingsScene(Scene):
         change_resolution(): Changes the game resolution.
     """
 
-    def __init__(self, core, parent_render):
+    __slots__ = [
+        "opacity",
+        "scale",
+        "volume",
+        "resolution",
+        "volume_slider",
+        "resolution_menu",
+        "apply_button",
+        "cancel_button",
+        "parent_render",
+    ]
+
+    def __init__(self, core, parent_render: callable) -> None:
         """
         Initializes the SettingsScene instance with the screen.
 
@@ -75,7 +87,7 @@ class SettingsScene(Scene):
             font_size,
         )
 
-    def handle_events(self, event: pygame.event.Event):
+    def handle_events(self, event: pygame.event.Event) -> None:
         """
         Handles events specific to the settings screen.
         """
@@ -104,7 +116,7 @@ class SettingsScene(Scene):
         if event.type == pygame.QUIT:
             pygame.event.post(pygame.event.Event(self.event, {"scene": "quit"}))
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the settings screen.
         """
@@ -116,12 +128,11 @@ class SettingsScene(Scene):
         if self.scale < 0.99:
             self.scale += 0.05
 
-    def render(self):
+    def render(self) -> None:
         """
         Renders the settings screen.
         """
         self.parent_render()
-
         self.screen.blit(self.opacity, (0, 0))
 
         volume_text = pygame.font.Font(None, 36).render(
@@ -158,7 +169,7 @@ class SettingsScene(Scene):
         )  # Draw the scaled screen onto the original screen
 
     @staticmethod
-    def change_button_color(button, hovered):
+    def change_button_color(button: Button, hovered: bool) -> None:
         """
         Changes the color of the button when hovered.
 

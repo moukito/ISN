@@ -134,11 +134,11 @@ class Building(TypedStructure):
     def __init__(self, costs, health, building_duration, type, coords, points, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
         super().__init__(type, StructureType.BUILDING, coords, points, orientation)
         self.costs = costs
-        self.health = health * self.player.upgrades.BUILDING_HEALTH_MULTIPLIER
         self.building_duration = building_duration
         self.building_time = 0
         self.workers = 0
         self.player = player
+        self.health = health * self.player.upgrades.BUILDING_HEALTH_MULTIPLIER
         self.destroy_callback = destroy_callback
         self.human_death_callback = human_death_callback
         self.state = BuildingState.PLACED

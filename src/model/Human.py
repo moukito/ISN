@@ -128,9 +128,9 @@ class Human(Entity):
 
         gathering_speed = self.gathering_speed
         if self.ressource_type == RessourceType.FOOD:
-            gathering_speed *= Upgrades.FOOD_MULTIPLIER
+            gathering_speed *= self.player.upgrades.FOOD_MULTIPLIER
         elif self.ressource_type in [RessourceType.STONE, RessourceType.IRON, RessourceType.COPPER, RessourceType.GOLD, RessourceType.CRYSTAL, RessourceType.VULCAN]:
-            gathering_speed *= Upgrades.MINING_MULTIPLIER
+            gathering_speed *= self.player.upgrades.MINING_MULTIPLIER
         if (self.type == HumanType.LUMBERJACK and self.ressource_type == RessourceType.WOOD
             or self.type == HumanType.FARMER and self.ressource_type == RessourceType.FOOD
             or self.type == HumanType.MINER and self.ressource_type in [RessourceType.STONE, RessourceType.IRON, RessourceType.COPPER, RessourceType.GOLD, RessourceType.CRYSTAL, RessourceType.VULCAN]):
@@ -218,7 +218,7 @@ class Human(Entity):
                     self.work = HumanWork.DESTROYING
                     self.target_location = location
             elif struct.structure_type == StructureType.ORE and (
-                    (struct.type == OreType.VULCAN or struct.type == OreType.CRYSTAL) and Upgrades.EXTRA_MATERIALS or 
+                    (struct.type == OreType.VULCAN or struct.type == OreType.CRYSTAL) and self.player.upgrades.EXTRA_MATERIALS or 
                     (struct.type != OreType.VULCAN and struct.type != OreType.CRYSTAL)):
                 self.work = HumanWork.GATHERING
                 self.gather_state = GatherState.GATHERING
@@ -281,7 +281,7 @@ class Human(Entity):
                         if self.work == HumanWork.FIGHTING:
                             if self.target_entity.health > 0:
                                 if self.target_entity.current_location.distance(self.current_location) <= Map.CELL_SIZE * 2:
-                                    if self.target_entity.damage(self.damage):
+                                    if self.target_entity.take_damage(self.damage):
                                         self.state = HumanState.IDLE
                                         self.work = HumanWork.IDLE
                                         self.target_entity = None
@@ -307,7 +307,7 @@ class Human(Entity):
         self.going_to_work = False
         self.going_to_target = False
 
-    def damage(self, damage):
+    def take_damage(self, damage):
         self.health -= damage
         dead = self.health <= 0
         if dead:
@@ -315,28 +315,28 @@ class Human(Entity):
         return dead
 
 class Colon(Human):
-    def __init__(self, map, location, player):
-        super().__init__(500, HumanType.COLON, 10, 2, 50, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(500, HumanType.COLON, 10, 2, 50, 2, map, location, player, death_callback)
 
 class Miner(Human):
-    def __init__(self, map, location, player):
-        super().__init__(600, HumanType.MINER, 10, 2, 50, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.MINER, 10, 2, 50, 2, map, location, player, death_callback)
 
 class Lumberjack(Human):
-    def __init__(self, map, location, player):
-        super().__init__(600, HumanType.LUMBERJACK, 10, 2, 60, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.LUMBERJACK, 10, 2, 60, 2, map, location, player, death_callback)
 
 class Farmer(Human):
-    def __init__(self, map, location, player):
-        super().__init__(600, HumanType.FARMER, 10, 2, 50, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.FARMER, 10, 2, 50, 2, map, location, player, death_callback)
 
 class Hunter(Human):
-    def __init__(self, map, location, player):
-        super().__init__(600, HumanType.HUNTER, 10, 2, 75, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.HUNTER, 10, 2, 75, 2, map, location, player, death_callback)
 
 class Soldier(Human):
-    def __init__(self, map, location, player):
-        super().__init__(600, HumanType.SOLDIER, 5, 1, 100, 3, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.SOLDIER, 5, 1, 100, 3, map, location, player, death_callback)
 
 human_type_class = {
     HumanType.COLON: Colon,

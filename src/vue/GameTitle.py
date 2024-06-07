@@ -22,7 +22,7 @@ class GameTitle(Scene):
 
     __slots__ = ["bg", "choice", "options", "font", "buttons"]
 
-    def __init__(self, core):
+    def __init__(self, core) -> None:
         """
         Initializes the GameTitle instance with the screen.
 
@@ -41,7 +41,7 @@ class GameTitle(Scene):
         self.choice = Choice()
         self.options = ["jouer", "sauvegardes", "explications", "option", "quitter"]
 
-    def setup(self):
+    def setup(self) -> None:
         self.core.update_screen()
 
         pygame.mixer.music.set_volume(self.parameter["volume"])
@@ -69,10 +69,10 @@ class GameTitle(Scene):
             for i, option in enumerate(self.options)
         ]
 
-    def __del__(self):
+    def __del__(self) -> None:
         pygame.mixer.music.stop()
 
-    def handle_events(self, event: pygame.event.Event):
+    def handle_events(self, event: pygame.event.Event) -> None:
         """
         Handles events specific to the title screen.
         """
@@ -99,13 +99,13 @@ class GameTitle(Scene):
                     pygame.event.Event(pygame.QUIT)
                 )  # Close the game and exit
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the title screen.
         """
         pass
 
-    def render(self):
+    def render(self) -> None:
         """
         Renders the title screen.
 
@@ -133,10 +133,10 @@ class GameTitle(Scene):
                 button.get_size()
             )  # Get the size of the text object
             x = (
-                        self.screen.get_width() - button_width
-                ) // 2  # Calculate the horizontal position (centered)
-            y = int(self.screen.get_height() * 0.45) + i * (
-                    self.screen.get_height() * 0.1
+                self.screen.get_width() - button_width
+            ) // 2  # Calculate the horizontal position (centered)
+            y = int(self.screen.get_height() * 0.65) + i * (
+                self.screen.get_height() * 0.1
             )  # Calculate the vertical position (80% from the top plus an offset)
 
             # Draw a triangle around the current choice
@@ -159,7 +159,7 @@ class GameTitle(Scene):
                 ]
                 pygame.draw.polygon(self.screen, button.color, points)
 
-    def choice_handler(self, choice):
+    def choice_handler(self, choice: Choice) -> None:
         """
         Handles the choice of the player.
         """

@@ -7,6 +7,7 @@ from vue.Scene import Scene
 from vue.BuildingChoice import BuildingChoice
 from vue.BuildingInterface import BuildingInterface
 from vue.Button import Button
+from vue.Pause import Pause
 
 from model.Tools import Colors, Directions
 from model.Map import Map, Biomes
@@ -15,7 +16,7 @@ from model.Perlin import Perlin
 from model.Player import Player
 from model.Ressource import RessourceType
 from model.Structures import StructureType, BuildingType, BuildingState, OreType, BaseCamp, Farm, get_struct_class_from_type
-from model.Human import Human, Colon, Lumberjack, Miner, Farmer, get_human_class_from_type
+from model.Human import Human, Colon, get_human_class_from_type
 from model.HumanType import HumanType
 from model.Saver import Saver
 
@@ -196,13 +197,18 @@ class GameVue(Scene):
                 self.mouse_pos = mouse_point
             # KEY UP
             elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_p :
+                    pause = Pause(
+                        self.core, self.render
+                    )  # Create and run the settings scene
+                    pause.run()
                 if event.key == pygame.K_s: # TODO: temporary
                     self.saver.save()
                 if event.key == pygame.K_h: # TODO: For debug, remove for the final version
                     chunk_pos = self.camera_pos // Map.CELL_SIZE // Perlin.CHUNK_SIZE
                     if self.map.chunk_humans.get(chunk_pos, None) is None:
                         self.map.chunk_humans[chunk_pos] = []
-                    human = Colon(self.map, self.camera_pos, self.player)
+                    human = Colon(self.map, self.camera_pos, self.player, self.human_died_callback)
                     self.map.chunk_humans[chunk_pos].append(human)
                     self.map.humans.append(human)
                 if event.key == pygame.K_r: # TODO: For debug, remove for the final version
@@ -235,14 +241,14 @@ class GameVue(Scene):
         self.map.remove_human(human)
 
     def initialize_camps(self):
-        self.map.place_structure(BaseCamp(Point.origin(), self.player))
+        self.map.place_structure(BaseCamp(Point.origin(), self.player, self.building_destroyed_callback, self.human_died_callback))
         for point in [Point(-3, 1), Point(-3, 2), Point(-3, 3), Point(-2, 3), Point(-1, 3)]:
             postion = point * Map.CELL_SIZE + Human.CELL_CENTER
-            human = Colon(self.map, postion, self.player)
+            human = Colon(self.map, postion, self.player, self.human_died_callback)
             self.map.place_human(human, postion)
 
     def add_human(self, human_type, position):
-        human = get_human_class_from_type(human_type)(self.map, position * Map.CELL_SIZE, self.player)
+        human = get_human_class_from_type(human_type)(self.map, position * Map.CELL_SIZE, self.player, self.human_died_callback)
         chunk_pos = position // Perlin.CHUNK_SIZE
         if self.map.chunk_humans.get(chunk_pos, None) is None:
             self.map.chunk_humans[chunk_pos] = []
