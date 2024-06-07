@@ -27,12 +27,12 @@ class GameVue(Scene):
     def __init__(self, core):
         super().__init__(core)
 
-        self.ressource_background_size = None
+        self.ressource_background_size = Point(0, 0)
         self.clicked_building = None
         self.home_button = None
         self.building_button = None
-        self.home_button_rect = None
-        self.building_button_rect = None
+        self.home_button_rect = Rectangle(0, 0, 0, 0)
+        self.building_button_rect = Rectangle(0, 0, 0, 0)
         self.building_pos = None
         self.building = None
 
@@ -57,10 +57,10 @@ class GameVue(Scene):
         self.screen_width, self.screen_height = self.screen.get_width(), self.screen.get_height()
         self.screen_size = Point(self.screen_width, self.screen_height)
 
-        self.building_choice = BuildingChoice(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons)
+        self.building_choice = BuildingChoice(self.player, self.screen, self.screen_size, self.ressource_background_size, {})
         self.building_choice_displayed = False
 
-        self.building_interface = BuildingInterface(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons)
+        self.building_interface = BuildingInterface(self.player, self.screen, self.screen_size, self.ressource_background_size, {})
         self.building_interface_displayed = False
 
         self.initialize_camps()
@@ -103,15 +103,10 @@ class GameVue(Scene):
             clicked_button = self.home_button if home_button_hovered else self.building_button
             clicked = clicked_button.is_clicked(event)
             if clicked:
-                clicked_button.color = (115, 207, 255)
                 if home_button_hovered:
                     self.camera_pos = Point.origin()
                 else:
                     self.building_choice_displayed = not self.building_choice_displayed
-            if clicked_button.is_hovered(event):
-                clicked_button.color = (101, 195, 255)
-            elif not clicked:
-                clicked_button.color = (46, 159, 228)
         else: # Events for the game
             # MOUSE BUTTON DOWN
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -180,11 +175,6 @@ class GameVue(Scene):
                         self.left_clicking = False
             # MOUSE MOTION
             elif event.type == pygame.MOUSEMOTION:
-                if self.button_hovered:
-                    self.button_hovered = False
-                    self.building_button.color = (46, 159, 228)
-                    self.home_button.color = (46, 159, 228)
-
                 if self.selecting:
                     self.select_end = mouse_point
                 elif self.right_clicking:
@@ -198,9 +188,7 @@ class GameVue(Scene):
             # KEY UP
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_p :
-                    pause = Pause(
-                        self.core, self.render
-                    )  # Create and run the settings scene
+                    pause = Pause(self.core, self.render)  # Create and run the settings scene
                     pause.run()
                 if event.key == pygame.K_s: # TODO: temporary
                     self.saver.save()
@@ -232,6 +220,9 @@ class GameVue(Scene):
         self.map.update(duration)
 
     def render(self):
+        pass
+
+    def ressource_update_callback(self):
         pass
 
     def building_destroyed_callback(self, building):
