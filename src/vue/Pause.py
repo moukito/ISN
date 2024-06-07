@@ -1,11 +1,10 @@
 import pygame
 
-from vue.core import Core
-from vue.scene import scene
+from vue.Scene import Scene
 
 
-class Pause(scene.Scene):
-    def __init__(self, core: Core, parent_render: callable):
+class Pause(Scene):
+    def __init__(self, core, parent_render: callable):
         super().__init__(core)
 
         self.parent_render = parent_render
