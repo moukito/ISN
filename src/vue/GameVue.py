@@ -257,7 +257,7 @@ class GameVue(Scene):
                         chunk_humans = self.map.chunk_humans.get(chunk_pos, None)
                         if chunk_humans is not None:
                             for human in chunk_humans:
-                                if Circle(human.current_location, 15).contains(pos_point + self.camera_pos):
+                                if Circle(human.current_location, Map.CELL_SIZE).contains(pos_point + self.camera_pos):
                                     self.selected_humans.append(human)
                                     self.selecting = False
                                     break
