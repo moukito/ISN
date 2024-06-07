@@ -1,5 +1,6 @@
 from model.Geometry import Point
 from model.Map import Map, Biomes
+from model.Perlin import Perlin
 
 class Node:
     def __init__(self, position, parent=None):
@@ -44,9 +45,9 @@ def AStar(start, end, map):
         neighbors = []
         for new_position in [Point(0, -1), Point(0, 1), Point(-1, 0), Point(1, 0), Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)]:
             node_position = current_node.position + new_position
-            chunk = map.get_chunk(node_position // Map.CHUNK_SIZE)
+            chunk = map.get_chunk(node_position // Perlin.CHUNK_SIZE)
 
-            if chunk[node_position.y % Map.CHUNK_SIZE][node_position.x % Map.CHUNK_SIZE] == Biomes.LAVA:
+            if chunk[int(node_position.y % Perlin.CHUNK_SIZE)][int(node_position.x % Perlin.CHUNK_SIZE)] == Biomes.LAVA:
                 continue
 
             new_node = Node(node_position, current_node)
