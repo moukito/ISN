@@ -1,9 +1,9 @@
 import pygame
 
-from src.vue.Button import Button
-from src.vue.Scene import Scene
-from src.vue.Select import Select
-from src.vue.Slider import Slider
+from vue.Button import Button
+from vue.Scene import Scene
+from vue.Select import Select
+from vue.Slider import Slider
 
 
 # TODO : adjust the select and slider class to the new structure
@@ -126,7 +126,7 @@ class SettingsScene(Scene):
         self.resolution = self.resolution_menu.get_value()
 
         if self.scale < 0.99:
-            self.scale += 0.02
+            self.scale += 0.05
 
     def render(self) -> None:
         """

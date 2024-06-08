@@ -22,18 +22,19 @@ class HumanWork(Enum):
     GATHERING = 1
     HUNTING = 2
     BUILDING = 3
-    FIGHTING = 4
+    DESTROYING = 4
+    FIGHTING = 5
 
 class GatherState(Enum):
     GATHERING = 1
     DEPOSITING = 2
 
 class Human(Entity):
-    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "going_to_deposit", "state", "work", "gather_state", "map", "player"]
+    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "damage", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "going_to_deposit", "state", "work", "gather_state", "map", "player", "target_entity", "death_callback"]
 
     CELL_CENTER = Point(Map.CELL_SIZE, Map.CELL_SIZE) // 2
 
-    def __init__(self, health, type, capacity, gathering_speed, speed, map, location, player):
+    def __init__(self, health, type, capacity, gathering_speed, damage, speed, map, location, player, death_callback):
         super().__init__(health, {})
         self.type = type
         self.current_location = location - location % Map.CELL_SIZE + Human.CELL_CENTER
@@ -42,6 +43,7 @@ class Human(Entity):
         self.path = None
         self.resource_capacity = capacity
         self.gathering_speed = gathering_speed
+        self.damage = damage
         self.ressource_type = None
         self.deposit_speed = 2
         self.speed = speed
@@ -53,8 +55,10 @@ class Human(Entity):
         self.work = HumanWork.IDLE
         self.gather_state = GatherState.GATHERING
         self.map = map
-        self.player = player
         self.orientation = Directions.BOTTOM
+        self.player = player
+        self.target_entity = None
+        self.death_callback = death_callback
 
     def find_nearest_building(self, building_types):
         buildings = []
@@ -124,9 +128,9 @@ class Human(Entity):
 
         gathering_speed = self.gathering_speed
         if self.ressource_type == RessourceType.FOOD:
-            gathering_speed *= Upgrades.FOOD_MULTIPLIER
+            gathering_speed *= self.player.upgrades.FOOD_MULTIPLIER
         elif self.ressource_type in [RessourceType.STONE, RessourceType.IRON, RessourceType.COPPER, RessourceType.GOLD, RessourceType.CRYSTAL, RessourceType.VULCAN]:
-            gathering_speed *= Upgrades.MINING_MULTIPLIER
+            gathering_speed *= self.player.upgrades.MINING_MULTIPLIER
         if (self.type == HumanType.LUMBERJACK and self.ressource_type == RessourceType.WOOD
             or self.type == HumanType.FARMER and self.ressource_type == RessourceType.FOOD
             or self.type == HumanType.MINER and self.ressource_type in [RessourceType.STONE, RessourceType.IRON, RessourceType.COPPER, RessourceType.GOLD, RessourceType.CRYSTAL, RessourceType.VULCAN]):
@@ -171,6 +175,10 @@ class Human(Entity):
         self.target_location = location
         self.go_to_location(self.target_location)
 
+    def set_target_entity(self, entity):
+        self.target_entity = entity
+        self.go_to_location(self.target_entity.current_location)
+
     def create_path(self, location):
         self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
         if len(self.path) > 1:
@@ -193,20 +201,24 @@ class Human(Entity):
             self.going_to_work = True
             if struct.structure_type == StructureType.BUILDING:
                 self.going_to_target = False
-                if struct.state == BuildingState.PLACED or struct.state == BuildingState.BUILDING:
-                    self.work = HumanWork.BUILDING
-                    self.building_location = location
-                else:
-                    if struct.type == BuildingType.FARM:
-                        self.work = HumanWork.GATHERING
-                        self.gather_state = GatherState.GATHERING
-                        self.ressource_type = RessourceType.FOOD
-                        self.going_to_target = True
-                        self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.PANTRY])
-                    else:
+                if struct.player == self.player:
+                    if struct.state == BuildingState.PLACED or struct.state == BuildingState.BUILDING:
+                        self.work = HumanWork.BUILDING
                         self.building_location = location
+                    else:
+                        if struct.type == BuildingType.FARM:
+                            self.work = HumanWork.GATHERING
+                            self.gather_state = GatherState.GATHERING
+                            self.ressource_type = RessourceType.FOOD
+                            self.going_to_target = True
+                            self.building_location, _ = self.find_nearest_building([BuildingType.BASE_CAMP, BuildingType.PANTRY])
+                        else:
+                            self.building_location = location
+                else:
+                    self.work = HumanWork.DESTROYING
+                    self.target_location = location
             elif struct.structure_type == StructureType.ORE and (
-                    (struct.type == OreType.VULCAN or struct.type == OreType.CRYSTAL) and Upgrades.EXTRA_MATERIALS or 
+                    (struct.type == OreType.VULCAN or struct.type == OreType.CRYSTAL) and self.player.upgrades.EXTRA_MATERIALS or 
                     (struct.type != OreType.VULCAN and struct.type != OreType.CRYSTAL)):
                 self.work = HumanWork.GATHERING
                 self.gather_state = GatherState.GATHERING
@@ -257,12 +269,30 @@ class Human(Entity):
                                 self.gather_state = GatherState.GATHERING
                                 self.going_to_target = True
                                 self.go_to_location(self.target_location)
-                            
+                    elif self.work == HumanWork.DESTROYING:
+                        struct = self.map.occupied_coords.get(self.target_location, None)
+                        if struct is not None and struct.structure_type == StructureType.BUILDING:
+                            struct.destroy(duration * self.gathering_speed)
+                            self.state = HumanState.IDLE
+                            duration = 0                            
                     elif self.work == HumanWork.BUILDING:
                         duration = 0
                     elif self.work == HumanWork.HUNTING or self.work == HumanWork.FIGHTING:
-                        # TODO: When there are animals and / or the AI
-                        duration = 0
+                        if self.work == HumanWork.FIGHTING:
+                            if self.target_entity.health > 0:
+                                if self.target_entity.current_location.distance(self.current_location) <= Map.CELL_SIZE * 2:
+                                    if self.target_entity.take_damage(self.damage):
+                                        self.state = HumanState.IDLE
+                                        self.work = HumanWork.IDLE
+                                        self.target_entity = None
+                                        duration = 0
+                                else:
+                                    self.create_path(self.target_entity.current_location)
+                            else:
+                                self.state = HumanState.IDLE
+                                self.work = HumanWork.IDLE
+                                self.target_entity = None
+                                duration = 0
                 else:
                     duration = self.move(duration)
                     if duration > 0 and self.work != HumanWork.IDLE:
@@ -277,28 +307,44 @@ class Human(Entity):
         self.going_to_work = False
         self.going_to_target = False
 
+    def take_damage(self, damage):
+        self.health -= damage
+        dead = self.health <= 0
+        if dead:
+            self.death_callback(self)
+        return dead
+
 class Colon(Human):
-    def __init__(self, map, location, player):
-        super().__init__(100, HumanType.COLON, 5, 1, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(500, HumanType.COLON, 10, 2, 50, 2, map, location, player, death_callback)
 
 class Miner(Human):
-    def __init__(self, map, location, player):
-        super().__init__(100, HumanType.MINER, 5, 1, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.MINER, 10, 2, 50, 2, map, location, player, death_callback)
 
 class Lumberjack(Human):
-    def __init__(self, map, location, player):
-        super().__init__(100, HumanType.LUMBERJACK, 5, 1, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.LUMBERJACK, 10, 2, 60, 2, map, location, player, death_callback)
 
 class Farmer(Human):
-    def __init__(self, map, location, player):
-        super().__init__(100, HumanType.FARMER, 5, 1, 2, map, location, player)
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.FARMER, 10, 2, 50, 2, map, location, player, death_callback)
 
+class Hunter(Human):
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.HUNTER, 10, 2, 75, 2, map, location, player, death_callback)
+
+class Soldier(Human):
+    def __init__(self, map, location, player, death_callback):
+        super().__init__(600, HumanType.SOLDIER, 5, 1, 100, 3, map, location, player, death_callback)
 
 human_type_class = {
     HumanType.COLON: Colon,
     HumanType.MINER: Miner,
     HumanType.LUMBERJACK: Lumberjack,
-    HumanType.FARMER: Farmer
+    HumanType.FARMER: Farmer,
+    HumanType.HUNTER: Hunter,
+    HumanType.SOLDIER: Soldier
 }
 
 def get_human_class_from_type(human_type):
