@@ -20,7 +20,7 @@ class Scene(ABC):
 
     __slots__ = ["running", "screen", "parameter", "core", "event"]
 
-    def __init__(self, core):
+    def __init__(self, core) -> None:
         """
         Initializes the Scene instance with the screen.
 
@@ -33,7 +33,7 @@ class Scene(ABC):
         self.parameter = core.parameter
         self.event = self.core.event
 
-    def run(self):
+    def run(self) -> None:
         """
         Runs the scene loop.
         """
@@ -43,7 +43,7 @@ class Scene(ABC):
             self.decorator_update()
             self.decorator_render()
 
-    def decorator_handle_events(self):
+    def decorator_handle_events(self) -> None:
         """
         Decorator method for handling events.
         """
@@ -52,13 +52,13 @@ class Scene(ABC):
                 self.running = False
             self.handle_events(event)
 
-    def decorator_update(self):
+    def decorator_update(self) -> None:
         """
         Decorator method for updating the scene.
         """
         self.update()
 
-    def decorator_render(self):
+    def decorator_render(self) -> None:
         """
         Decorator method for rendering the scene.
         """
@@ -67,7 +67,7 @@ class Scene(ABC):
         pygame.display.flip()
 
     @abstractmethod
-    def handle_events(self, event):
+    def handle_events(self, event: pygame.event.Event) -> None:
         """
         Abstract method for handling events.
         To be implemented in subclasses.
@@ -75,7 +75,7 @@ class Scene(ABC):
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self) -> None:
         """
         Abstract method for updating the scene.
         To be implemented in subclasses.
@@ -83,7 +83,7 @@ class Scene(ABC):
         pass
 
     @abstractmethod
-    def render(self):
+    def render(self) -> None:
         """
         Abstract method for rendering the scene.
         To be implemented in subclasses.

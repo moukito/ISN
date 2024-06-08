@@ -266,6 +266,19 @@ class Map:
             except Exception:
                 pass
 
+    def remove_building(self, building):
+        self.buildings.remove(building)
+        self.building_type[building.type].remove(building)
+        self.structures[building.coords // Perlin.CHUNK_SIZE].remove(building)
+        for point in building.points:
+            self.occupied_coords.pop(building.coords + point)
+            actual_chunk_pos = (building.coords + point) // Perlin.CHUNK_SIZE
+            self.chunk_occupied_coords[actual_chunk_pos].remove(building.coords + point)
+
+    def remove_human(self, human):
+        self.humans.remove(human)
+        self.chunk_humans[human.current_location // Map.CELL_SIZE // Perlin.CHUNK_SIZE].remove(human)
+
     def update(self, duration):
         need_render = False
 
