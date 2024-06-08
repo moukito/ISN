@@ -1,10 +1,11 @@
+from model.Human import HumanState
 from model.Map import Map
 from model.Player import Player
 from model.QLearningAgent import QLearningAgent
 from model.Ressource import RessourceType
 from model.Structures import BuildingType
-from model.Upgrades import Upgrades
 
+LEARN = True
 
 class AiPlayer(Player):
     def __init__(
@@ -13,23 +14,28 @@ class AiPlayer(Player):
     ):
         super().__init__(ressource_update_callback)
 
-        actions = [
-            place_structure,
+        self.actions = [
+            
         ]
 
-        self.model = QLearningAgent(actions)
+        self.model = QLearningAgent(self.actions)
 
-    def learn(self):
-        pass
-
-    def step(self, map: Map):
+    def calculate_state(self, map: Map):
         ressource = self.get_structures(map)
         technology = self.get_technology(map)
         craft = self.get_craft(map)
         human = self.get_human(map)
         ennemi = self.get_ennemi(map)
-        state = (ressource, technology, craft, human, ennemi)
-        self.model.choose_action(state)
+        return (ressource, technology, craft, human, ennemi)
+
+    def step(self, map: Map):
+        state = self.calculate_state(map)
+        id_action = self.model.choose_action(state)
+        reward = self.actions[id_action]()
+        next_state = self.calculate_state(map)
+
+        if LEARN:
+            self.model.update_q_table(state, id_action, reward, next_state)
 
     def get_structures(self, map: Map):
         pantry = 0
@@ -46,19 +52,19 @@ class AiPlayer(Player):
         return pantry, farm, mine
 
     def get_technology(self, map: Map):
-        if Upgrades.BUILDING_HEALTH_MULTIPLIER == 2:
+        if self.upgrades.BUILDING_HEALTH_MULTIPLIER == 2:
             base_updatehealth = 1
         else:
             base_updatehealth = 0
-        if Upgrades.BUILDING_TIME_MULTIPLIER == 2:
+        if self.upgrades.BUILDING_TIME_MULTIPLIER == 2:
             base_update_time = 2
         else:
             base_update_time = 0
-        if Upgrades.FOOD_MULTIPLIER == 2:
+        if self.upgrades.FOOD_MULTIPLIER == 2:
             food_update = 1
         else:
             food_update = 0
-        if Upgrades.MINING_MULTIPLIER == 2:
+        if self.upgrades.MINING_MULTIPLIER == 2:
             mining_update = 1
         else:
             mining_update = 0
@@ -83,7 +89,8 @@ class AiPlayer(Player):
         human = 0
         for human in map.humans:
             if human.player == self:
-                human += 1
+                if human.state == HumanState.IDLE:
+                    human += 1
         return human
 
     def get_ennemi(self, map: Map):
