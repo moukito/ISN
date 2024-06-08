@@ -502,29 +502,36 @@ class GameVue(Scene):
             self.screen.blit(ressource_icon_2, (160, offset + 43 + 30 * i))
 
             i += 1
-        #compass
-        camera_pos = Point(int(self.camera_pos.x), int(self.camera_pos.y))
-        base_pos = Point(0,0)
-        distance = camera_pos.distance(base_pos)// Map.CELL_SIZE
-        font = pygame.font.Font("assets/font/Space-Laser-BF65f80ab15c082.otf", 72)
-        text = font.render(f"Distance: {int(distance)} ", True, (0,0,0))
-        text_rect = text.get_rect(center=(3600,300))
-        self.screen.blit(text, text_rect)
-        compass_center = (3600,150)
 
-        if camera_pos == base_pos :
-            pygame.draw.circle(self.screen, (0,0,0), compass_center, 100, 100)
-        else :
-            vect_posx = -(camera_pos.x/camera_pos.distance(base_pos))*100
-            vect_posy = -(camera_pos.y/camera_pos.distance(base_pos))*100
+        #compass
+            
+        camera_pos = Point(int(self.camera_pos.x), int(self.camera_pos.y))
+        base_pos = Point(0, 0)
+        screen_width, screen_height = self.screen.get_size()
+        compass_center_x = int(screen_width * 0.9)
+        compass_center_y = int(screen_height * 0.2)
+        compass_center = (compass_center_x, compass_center_y)
+        largeur_boussole = int(screen_width * 0.05)
+
+        distance = camera_pos.distance(base_pos) // Map.CELL_SIZE
+        font_size = int(screen_height * 0.05)
+        font = pygame.font.Font("assets/font/Space-Laser-BF65f80ab15c082.otf", font_size)
+        text = font.render(f"Distance: {int(distance)} ", True, (0, 0, 0))
+        text_rect = text.get_rect(center=(compass_center_x, compass_center_y + largeur_boussole + 30))
+        self.screen.blit(text, text_rect)
+
+        if camera_pos == base_pos:
+            pygame.draw.circle(self.screen, (0, 0, 0), compass_center, largeur_boussole, 10)
+        else:
+            vect_posx = -(camera_pos.x / camera_pos.distance(base_pos)) * largeur_boussole
+            vect_posy = -(camera_pos.y / camera_pos.distance(base_pos)) * largeur_boussole
             vect_pos = Point(vect_posx, vect_posy)
-            end_posx = vect_posx + compass_center[0]
-            end_posy = vect_posy + compass_center[1]
+            end_posx = vect_posx + compass_center_x
+            end_posy = vect_posy + compass_center_y
             end_pos = (end_posx, end_posy)
 
-            pygame.draw.circle(self.screen, (0,0,0), compass_center, 100, 10)
+            pygame.draw.circle(self.screen, (0, 0, 0), compass_center, largeur_boussole, 10)
             pygame.draw.line(self.screen, (255, 0, 0), compass_center, end_pos, 4)
-
 
         self.home_button.render(self.screen)
         self.building_button.render(self.screen)
