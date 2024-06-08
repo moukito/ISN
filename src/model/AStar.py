@@ -1,5 +1,6 @@
 from model.Geometry import Point
-from model.Map import Map
+from model.Map import Map, Biomes
+from model.Perlin import Perlin
 
 class Node:
     def __init__(self, position, parent=None):
@@ -20,7 +21,8 @@ def AStar(start, end, map):
 
     open_list.append(start_node)
 
-    while open_list:
+    count = 0
+    while open_list and count < 300:
         current_node = open_list[0]
         current_index = 0
 
@@ -43,10 +45,10 @@ def AStar(start, end, map):
         neighbors = []
         for new_position in [Point(0, -1), Point(0, 1), Point(-1, 0), Point(1, 0), Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)]:
             node_position = current_node.position + new_position
+            chunk = map.get_chunk(node_position // Perlin.CHUNK_SIZE)
 
-            # TODO : When we want the obstacles (structures) to be taken into account / Maybe add a condition for lava too
-            #if map.occupied_coords.get(node_position, None) is not None:
-            #    continue
+            if chunk[int(node_position.y % Perlin.CHUNK_SIZE)][int(node_position.x % Perlin.CHUNK_SIZE)] == Biomes.LAVA:
+                continue
 
             new_node = Node(node_position, current_node)
             neighbors.append(new_node)

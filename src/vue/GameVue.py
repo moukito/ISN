@@ -16,12 +16,13 @@ from model.Perlin import Perlin
 from model.Player import Player
 from model.Ressource import RessourceType
 from model.Structures import StructureType, BuildingType, BuildingState, OreType, BaseCamp, Farm, get_struct_class_from_type
-from model.Human import Human, Colon, Lumberjack, Miner, Farmer, get_human_class_from_type
+from model.Human import Human, Colon, get_human_class_from_type
 from model.HumanType import HumanType
 from model.Saver import Saver
 
 class GameVue(Scene):
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "clicked_building", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
+    # TODO: Add the scaling of the interface and the map
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "clicked_building", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "scale_factor", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -69,6 +70,8 @@ class GameVue(Scene):
 
         self.screen_width, self.screen_height = self.screen.get_width(), self.screen.get_height()
         self.screen_size = Point(self.screen_width, self.screen_height)
+        self.scale_factor = 1
+        self.scale()
         self.cell_width_count = ceil(self.screen_size.x / Map.CELL_SIZE)
         self.cell_height_count = ceil(self.screen_height / Map.CELL_SIZE)
 
@@ -89,9 +92,20 @@ class GameVue(Scene):
         self.saver = Saver(self, core.save_name)
 
         # TODO
-        print(core.save_name)
         if core.save_name is not None:
             self.saver.load()
+
+    def scale(self):
+        max_length = max(self.screen_width, self.screen_height)
+        if max_length <= 1200:
+            Map.CELL_SIZE = 30
+            self.scale_factor = 1
+        elif max_length > 1200 and max_length <= 1800:
+            Map.CELL_SIZE = 35
+            self.scale_factor = 1.2
+        else:
+            Map.CELL_SIZE = 40
+            self.scale_factor = 1.4
 
     def reset_building(self):
         self.building = None
@@ -125,7 +139,7 @@ class GameVue(Scene):
         self.building_textures = {}
         for building in BuildingType:
             try:
-                building_struct = get_struct_class_from_type(building)(Point(0, 0), self.player)
+                building_struct = get_struct_class_from_type(building)(Point(0, 0), self.player, self.building_destroyed_callback, self.human_died_callback)
                 self.building_textures[building] = pygame.transform.scale(pygame.image.load("assets/Textures/Buildings/" + building.name.lower() + ".png").convert_alpha(), (building_struct.rect_size.x * Map.CELL_SIZE, building_struct.rect_size.y * Map.CELL_SIZE))
             except Exception:
                 self.building_textures[building] = None
@@ -139,12 +153,12 @@ class GameVue(Scene):
 
         self.missing_texture = pygame.transform.scale(pygame.image.load("assets/Textures/missing.png").convert_alpha(), (Map.CELL_SIZE, Map.CELL_SIZE))
 
-        self.ressource_background = pygame.transform.scale(pygame.image.load("assets/ui.png").convert_alpha(), (312, 202))
+        self.ressource_background = pygame.transform.scale(pygame.image.load("assets/ui.png").convert_alpha(), (312 * self.scale_factor, 202 * self.scale_factor))
         self.ressource_background_size = Point(self.ressource_background.get_width(), self.ressource_background.get_height())
-        self.home_button = Button("Base", self.ressource_background_size.x + 15, self.screen_height - 95, 70, 70, (46, 159, 228), None, 15)
-        self.building_button = Button("Bâtiments", self.ressource_background_size.x + 15, self.screen_height - 180, 70, 70, (46, 159, 228), None, 15)
-        self.home_button_rect = Rectangle(self.ressource_background_size.x + 15, self.screen_height - 95, self.ressource_background_size.x + 85, self.screen_height - 25)
-        self.building_button_rect = Rectangle(self.ressource_background_size.x + 15, self.screen_height - 180, self.ressource_background_size.x + 85, self.screen_height - 110)
+        self.home_button = Button("Base", self.ressource_background_size.x + 15 * self.scale_factor, self.screen_height - 95 * self.scale_factor, 70 * self.scale_factor, 70 * self.scale_factor, (46, 159, 228), None, 15)
+        self.building_button = Button("Bâtiments", self.ressource_background_size.x + 15 * self.scale_factor, self.screen_height - 180 * self.scale_factor, 70 * self.scale_factor, 70 * self.scale_factor, (46, 159, 228), None, 15)
+        self.home_button_rect = Rectangle(self.ressource_background_size.x + 15 * self.scale_factor, self.screen_height - 95 * self.scale_factor, self.ressource_background_size.x + 85 * self.scale_factor, self.screen_height - 25 * self.scale_factor)
+        self.building_button_rect = Rectangle(self.ressource_background_size.x + 15 * self.scale_factor, self.screen_height - 180 * self.scale_factor, self.ressource_background_size.x + 85 * self.scale_factor, self.screen_height - 110 * self.scale_factor)
 
         self.colors = {
             Colors.BLACK: pygame.Color(pygame.color.THECOLORS["black"]),
@@ -167,7 +181,7 @@ class GameVue(Scene):
         if self.building_choice_displayed and self.building_choice.rect.containsPoint(mouse_point):
             result = self.building_choice.event_stream(event)
             if result is not None:
-                self.building = get_struct_class_from_type(result)(self.camera_pos // Map.CELL_SIZE, self.player)
+                self.building = get_struct_class_from_type(result)(self.camera_pos // Map.CELL_SIZE, self.player, self.building_destroyed_callback, self.human_died_callback)
                 self.building_pos = mouse_point - self.screen_size // 2
                 self.building_choice_displayed = False
             self.frame_render = True
@@ -303,7 +317,7 @@ class GameVue(Scene):
                     chunk_pos = self.camera_pos // Map.CELL_SIZE // Perlin.CHUNK_SIZE
                     if self.map.chunk_humans.get(chunk_pos, None) is None:
                         self.map.chunk_humans[chunk_pos] = []
-                    human = Colon(self.map, self.camera_pos, self.player)
+                    human = Colon(self.map, self.camera_pos, self.player, self.human_died_callback)
                     self.map.chunk_humans[chunk_pos].append(human)
                     self.map.humans.append(human)
                     self.frame_render = True
@@ -452,8 +466,8 @@ class GameVue(Scene):
                             selected = id(human) in ids
 
                         if selected:
-                            pygame.draw.circle(self.screen, self.colors[Colors.AQUA], (absolute_point.x + Map.CELL_SIZE // 2 + 1, absolute_point.y + Map.CELL_SIZE // 2), 10)
-                        self.screen.blit(self.humans_textures[human.type][human.orientation], (absolute_point.x, absolute_point.y))
+                            pygame.draw.circle(self.screen, self.colors[Colors.AQUA], (absolute_point.x + 1, absolute_point.y), 10)
+                        self.screen.blit(self.humans_textures[human.type][human.orientation], (absolute_point.x - Map.CELL_SIZE // 2, absolute_point.y - Map.CELL_SIZE // 2))
                 
 
     def render_selection(self):
@@ -528,16 +542,22 @@ class GameVue(Scene):
     def ressource_update_callback(self):
         self.frame_render = True
 
+    def building_destroyed_callback(self, building):
+        self.map.remove_building(building)
+
+    def human_died_callback(self, human):
+        self.map.remove_human(human)
+
     def initialize_camps(self):
-        self.map.place_structure(BaseCamp(Point.origin(), self.player))
+        self.map.place_structure(BaseCamp(Point.origin(), self.player, self.building_destroyed_callback, self.human_died_callback))
         for point in [Point(-3, 1), Point(-3, 2), Point(-3, 3), Point(-2, 3), Point(-1, 3)]:
             postion = point * Map.CELL_SIZE + Human.CELL_CENTER
-            human = Colon(self.map, postion, self.player)
+            human = Colon(self.map, postion, self.player, self.human_died_callback)
             self.map.place_human(human, postion)
             self.frame_render = True
 
     def add_human(self, human_type, position):
-        human = get_human_class_from_type(human_type)(self.map, position * Map.CELL_SIZE, self.player)
+        human = get_human_class_from_type(human_type)(self.map, position * Map.CELL_SIZE, self.player, self.human_died_callback)
         chunk_pos = position // Perlin.CHUNK_SIZE
         if self.map.chunk_humans.get(chunk_pos, None) is None:
             self.map.chunk_humans[chunk_pos] = []
