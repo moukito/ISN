@@ -135,7 +135,7 @@ class GameTitle(Scene):
             x = (
                 self.screen.get_width() - button_width
             ) // 2  # Calculate the horizontal position (centered)
-            y = int(self.screen.get_height() * 0.65) + i * (
+            y = int(self.screen.get_height() * 0.45) + i * (
                 self.screen.get_height() * 0.1
             )  # Calculate the vertical position (80% from the top plus an offset)
 

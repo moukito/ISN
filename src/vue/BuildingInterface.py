@@ -9,7 +9,7 @@ from model.Structures import Technologies
 class BuildingInterface:
     __slots__ = ["font", "buttons", "buttons_infos", "player", "screen", "screen_size", "ressource_rect_size", "margin", "padding", "cell_size", "internal_origin", "rect", "ressource_icons", "technology_icons", "human_icon", "background"]
 
-    def __init__(self, player, screen, screen_size, ressource_rect_size, ressource_icons):
+    def __init__(self, player, screen, screen_size, ressource_rect_size, ressource_icons, scale_factor):
         self.font = pygame.font.Font("assets/font/Junter.otf", 12)
         self.buttons_infos = {}
         self.buttons = {}
@@ -19,9 +19,9 @@ class BuildingInterface:
         self.ressource_rect_size = ressource_rect_size
         self.margin = 5
         self.padding = 3
-        self.cell_size = 60
-        self.internal_origin = Point(40 + ressource_rect_size.x + 100, self.screen_size.y - self.ressource_rect_size.y + 40)
-        self.rect = Rectangle(ressource_rect_size.x + 100, self.screen_size.y - self.ressource_rect_size.y, ressource_rect_size.x + 600, self.screen_size.y)
+        self.cell_size = Point(140, 70)
+        self.internal_origin = Point(140 * scale_factor + ressource_rect_size.x, self.screen_size.y - self.ressource_rect_size.y + 50 * scale_factor)
+        self.rect = Rectangle(ressource_rect_size.x + 100 * scale_factor, self.screen_size.y - self.ressource_rect_size.y, ressource_rect_size.x + 600 * scale_factor, self.screen_size.y)
 
         
         self.ressource_icons = {}
@@ -46,14 +46,14 @@ class BuildingInterface:
         self.buttons.clear()
         self.buttons_infos = buttons_info
         for cell_pos in buttons_info.keys():
-            button = Button("", self.internal_origin.x + cell_pos.y * (self.cell_size + self.margin), self.internal_origin.y + cell_pos.x * (self.cell_size + self.margin), self.cell_size, self.cell_size, (74, 88, 128), "assets/font/Junter.otf", 15)
+            button = Button("", self.internal_origin.x + cell_pos.y * (self.cell_size.x + self.margin), self.internal_origin.y + cell_pos.x * (self.cell_size.y + self.margin), self.cell_size.x, self.cell_size.y, (74, 88, 128), "assets/font/Junter.otf", 15)
             self.buttons[cell_pos] = button
 
     def render(self):
         self.screen.blit(self.background, (self.rect.x1, self.rect.y1))
 
         for pos, button in self.buttons.items():
-            position = Point(self.internal_origin.x + pos.y * (self.cell_size + self.margin), self.internal_origin.y + pos.x * (self.cell_size + self.margin))
+            position = Point(self.internal_origin.x + pos.y * (self.cell_size.x + self.margin), self.internal_origin.y + pos.x * (self.cell_size.y + self.margin))
             button.render(self.screen)
             costs, icon, _ = self.buttons_infos[pos]
             if icon is not None:
@@ -62,7 +62,7 @@ class BuildingInterface:
                     image = self.technology_icons[icon]
                 else:
                     image = self.human_icon[icon]
-                self.screen.blit(image, (position.x + (self.cell_size - 30) // 2, position.y + 4))
+                self.screen.blit(image, (position.x + (self.cell_size.x - 30) // 2, position.y + 4))
 
             i = 0
             for ressource_type, ressource_number in costs.items():

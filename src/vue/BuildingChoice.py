@@ -9,12 +9,12 @@ from model.Ressource import RessourceType
 class BuildingChoice:
     __slots__ = ["buttons", "player", "screen", "screen_size", "ressource_rect_size", "width", "margin", "padding", "building_size", "internal_origin", "rect", "building_costs", "font", "ressource_icons", "building_icons", "building_rendered_names", "background"]
 
-    def __init__(self, player, screen, screen_size, ressource_rect_size, ressource_icons):
+    def __init__(self, player, screen, screen_size, ressource_rect_size, ressource_icons, scale_factor):
         building_names =  {
             BuildingType.FARM: "Ferme", 
             BuildingType.PANTRY: "Garde-Manger",
             BuildingType.MINER_CAMP: "Camp de Mineurs",
-            BuildingType.LUMBER_CAMP: "Camp de bûcherons",
+            BuildingType.LUMBER_CAMP: "Camp de bucherons",
             BuildingType.HUNTER_CAMP: "Camp de chasseurs",
             BuildingType.SOLDIER_CAMP: "Camp de soldats",
         }
@@ -47,8 +47,8 @@ class BuildingChoice:
         self.width = ressource_rect_size.x
         self.margin = 5
         self.padding = 3
-        self.building_size = 115
-        self.internal_origin = Point(34, 44)
+        self.building_size = 115 * scale_factor
+        self.internal_origin = Point(34, 44) * scale_factor
         self.rect = Rectangle(0, 0, self.width, self.screen_size.y - self.ressource_rect_size.y - 20)
         self.ressource_icons = ressource_icons
         self.background = pygame.transform.scale(pygame.image.load("assets/building_ui.png").convert_alpha(), (self.rect.x2, self.rect.y2))
