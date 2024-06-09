@@ -23,7 +23,14 @@ class Core:
         run(): Starts the game execution.
     """
 
-    __slots__ = ["screen", "title_screen", "parameter", "save_name", "game_screen", "event"]
+    __slots__ = [
+        "screen",
+        "title_screen",
+        "parameter",
+        "save_name",
+        "game_screen",
+        "event",
+    ]
 
     def __init__(self) -> None:
         """
@@ -51,7 +58,6 @@ class Core:
         """
         pygame.display.set_caption("Exodus", "exodus icon")
         pygame.display.set_icon(pygame.image.load("assets/icon/exodus.png"))
-        # TODO : add an icon for the window in the task manager
 
     def setup_parameter(self) -> None:
         """
@@ -142,7 +148,5 @@ class Core:
 
     def start_game(self) -> None:
         self.game_screen = GameVue(self)
-        # TODO : self.game_screen.setup()
         self.game_screen.run()
         del self.game_screen
-        # TODO : self.run()

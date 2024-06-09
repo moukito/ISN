@@ -6,7 +6,6 @@ from vue.Select import Select
 from vue.Slider import Slider
 
 
-# TODO : adjust the select and slider class to the new structure
 class SettingsScene(Scene):
     """
     Represents the settings screen of the game.
@@ -171,11 +170,11 @@ class SettingsScene(Scene):
     @staticmethod
     def change_button_color(button: Button, hovered: bool) -> None:
         """
-        Changes the color of the button when hovered.
+            Changes the color of the button when hovered.
 
-        Parameters:
-            button (Button): The button to change the color of.
-            hovered (bool): Whether the button is hovered or not.
+            Parameters:
+                button (Button): The button to change the color of.
+                hovered (bool): Whether the button is hovered or not.
         """
         if hovered:
             if button.text == "Apply":

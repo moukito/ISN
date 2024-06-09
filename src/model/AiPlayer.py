@@ -7,6 +7,7 @@ from model.Structures import BuildingType
 
 LEARN = True
 
+
 class AiPlayer(Player):
     def __init__(
         self,
@@ -14,9 +15,7 @@ class AiPlayer(Player):
     ):
         super().__init__(ressource_update_callback)
 
-        self.actions = [
-            
-        ]
+        self.actions = []
 
         self.model = QLearningAgent(self.actions)
 
@@ -26,7 +25,7 @@ class AiPlayer(Player):
         craft = self.get_craft(map)
         human = self.get_human(map)
         ennemi = self.get_ennemi(map)
-        return (ressource, technology, craft, human, ennemi)
+        return ressource, technology, craft, human, ennemi
 
     def step(self, map: Map):
         state = self.calculate_state(map)
