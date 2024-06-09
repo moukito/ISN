@@ -265,8 +265,7 @@ class Pantry(Building):
 
 class Farm(Building):
     __slots__ = ["food"]
-    # TODO: produce a limited amount of food
-
+    
     def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
         super().__init__({RessourceType.WOOD: 50}, 300, 1 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, destroy_callback, human_death_callback, orientation)
     
