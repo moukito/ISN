@@ -204,6 +204,8 @@ class BaseCamp(Building):
             buttons[Point(1, 0)] = ({RessourceType.FOOD: 400, RessourceType.WOOD: 300, RessourceType.STONE: 300}, Technologies.BUILDING_HEALTH, self.technology_building_health)
         if self.player.upgrades.BUILDING_TIME_MULTIPLIER != 2:
             buttons[Point(1, 1)] = ({RessourceType.WOOD: 500, RessourceType.STONE: 600, RessourceType.CRYSTAL: 500}, Technologies.BUILDING_TIME, self.technology_building_time)
+        if not self.player.upgrades.EXTRA_MATERIALS:
+            buttons[Point(1, 2)] = ({RessourceType.STONE: 400, RessourceType.IRON: 400, RessourceType.GOLD: 300}, Technologies.EXTRA_MATERIALS, self.technology_extra_materials)
         return buttons
     
     def spawn_colon(self):
@@ -227,6 +229,13 @@ class BaseCamp(Building):
             for building in self.gamevue.map.buildings:
                 if building.player == self.player:
                     building.health *= 2
+
+    def technology_extra_materials(self):
+        if self.player.get_ressource(RessourceType.STONE) >= 400 and self.player.get_ressource(RessourceType.IRON) >= 400 and self.player.get_ressource(RessourceType.GOLD) >= 300:
+            self.player.add_ressource(RessourceType.STONE, -400)
+            self.player.add_ressource(RessourceType.IRON, -400)
+            self.player.add_ressource(RessourceType.GOLD, -300)
+            self.player.upgrades.EXTRA_MATERIALS = True
         
 class Pantry(Building):
     def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
@@ -256,8 +265,7 @@ class Pantry(Building):
 
 class Farm(Building):
     __slots__ = ["food"]
-    # TODO: produce a limited amount of food
-
+    
     def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
         super().__init__({RessourceType.WOOD: 50}, 300, 1 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, destroy_callback, human_death_callback, orientation)
     

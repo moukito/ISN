@@ -16,20 +16,22 @@ class ControlScene(Scene):
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
         font_size = int(self.screen.get_height() * 0.065)
-        self.font_size = int(self.screen.get_height() * 0.040)
+        self.font_size = int(self.screen.get_height() * 0.030)
 
         text = [
-            "aaaa",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
+            "Le but du jeu est d'agrandir le plus votre colonie spatiale en construisant de nouveaux batiments",
+            "et en recuperant des ressources.",
+            "Pour vous aider, vous avez des colons que vous pouvez assigner a differentes taches",
+            "comme la construction de batiments, la recolte de ressources ou le combat.",
+            "Pour selectionner un colon, vous pouvez cliquer sur lui ou alors en selectionner plusieurs en",
+            "utilisant le clic gauche. Une fois selectionnes, vous pouvez cliquer sur une ressource ou un batiment",
+            "pour les envoyer la-bas. Dans le cas d'une ressource, le colon fera des aller-retours avec le batiment",
+            "le plus proche pour les deposer. Vous pouvez annuler une selection en appuyant sur echap.",
+            "Les batiments, que vous pouvez construire avec le bouton \"Batiment\", ont un cout en ressources.",
+            "Le batiment doit etre construit par un ou plusieurs colons. Les batiments contiennent des ameliorations",
+            "qui permettent de d'ameliorer la production de ressources ou d'ameliorer sa colonie.",
+            "Pour se deplacer sur la carte, il faut utiliser le clic droit. La boussole vous indique la direction de",
+            "votre colonie. Vous pouvez aussi retourner a la base en cliquant sur le bouton \"Base\".",
         ]
 
         font = pygame.font.Font("assets/font/Junter.otf", self.font_size)
@@ -75,7 +77,7 @@ class ControlScene(Scene):
                 line,
                 (
                     50,
-                    50 + (self.font_size + 5) * i,
+                    50 + (self.font_size + 18) * i,
                 ),
             )
             i += 1

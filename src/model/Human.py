@@ -181,9 +181,12 @@ class Human(Entity):
 
     def create_path(self, location):
         self.path = AStar(self.current_location // Map.CELL_SIZE, location, self.map)
-        if len(self.path) > 1:
-            self.path[0] = self.current_location
-        self.path[-1] = self.path[-1] + Point(uniform(-1, 1), uniform(-1, 1)) * Map.CELL_SIZE
+        if self.path is None:
+            self.path = [self.current_location]
+        else:
+            if len(self.path) > 1:
+                self.path[0] = self.current_location
+            self.path[-1] = self.path[-1] + Point(uniform(-1, 1), uniform(-1, 1)) * Map.CELL_SIZE
         
     def go_to_location(self, location):
         if self.work == HumanWork.BUILDING:

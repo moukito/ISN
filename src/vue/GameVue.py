@@ -21,8 +21,7 @@ from model.HumanType import HumanType
 from model.Saver import Saver
 
 class GameVue(Scene):
-    # TODO: Add the scaling of the interface and the map
-    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "clicked_building", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "screen_size", "scale_factor", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
+    __slots__ = ["saver", "player", "map", "actual_chunks", "buildings", "frame_render", "render_until_event", "clicked_building", "camera_pos", "left_clicking", "right_clicking", "button_hovered", "start_click_pos", "mouse_pos", "select_start", "select_end", "selecting", "selected_humans", "building", "building_pos", "cell_pixel_size", "screen_width", "screen_height", "base_pos", "compass_center", "compass_width", "screen_size", "scale_factor", "cell_width_count", "cell_height_count", "ressource_font", "ressource_icons", "humans_textures", "tree_texture", "biomes_textures", "ore_textures", "building_textures", "missing_texture", "ressource_background", "ressource_background_size", "building_button", "home_button", "building_button_rect", "home_button_rect", "colors", "clock", "last_timestamp", "building_choice", "building_choice_displayed", "building_interface", "building_interface_displayed"]
 
     def __init__(self, core):
         super().__init__(core)
@@ -74,26 +73,32 @@ class GameVue(Scene):
         self.scale()
         self.cell_width_count = ceil(self.screen_size.x / Map.CELL_SIZE)
         self.cell_height_count = ceil(self.screen_height / Map.CELL_SIZE)
+        
+        self.base_pos = Point.origin()
+        self.compass_center = Point(self.screen_width * 0.95, self.screen_height * 0.1)
+        self.compass_width = int(self.screen_width * 0.04)
 
         self.load_ressources()
 
-        self.building_choice = BuildingChoice(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons)
+        self.building_choice = BuildingChoice(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons, self.scale_factor)
         self.building_choice_displayed = False
 
-        self.building_interface = BuildingInterface(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons)
+        self.building_interface = BuildingInterface(self.player, self.screen, self.screen_size, self.ressource_background_size, self.ressource_icons, self.scale_factor)
         self.building_interface_displayed = False
 
         self.initialize_camps()
 
         self.clock = pygame.time.Clock()
 
-        self.last_timestamp = time_ns()
-
         self.saver = Saver(self, core.save_name)
 
         # TODO
         if core.save_name is not None:
             self.saver.load()
+
+        self.initialize_music()
+
+        self.last_timestamp = time_ns()
 
     def scale(self):
         max_length = max(self.screen_width, self.screen_height)
@@ -171,6 +176,11 @@ class GameVue(Scene):
             Colors.ORANGE: pygame.Color(pygame.color.THECOLORS["orange"]),
             Colors.YELLOW: pygame.Color(pygame.color.THECOLORS["yellow"])
         }
+
+    def initialize_music(self):
+        pygame.mixer.music.load("assets/music/titleScreen.mp3")
+        pygame.mixer.music.set_volume(self.parameter["volume"])
+        pygame.mixer.music.play()
 
     def handle_events(self, event):
         mouse_pos = pygame.mouse.get_pos()
@@ -257,7 +267,7 @@ class GameVue(Scene):
                         chunk_humans = self.map.chunk_humans.get(chunk_pos, None)
                         if chunk_humans is not None:
                             for human in chunk_humans:
-                                if Circle(human.current_location, 15).contains(pos_point + self.camera_pos):
+                                if Circle(human.current_location, Map.CELL_SIZE).contains(pos_point + self.camera_pos):
                                     self.selected_humans.append(human)
                                     self.selecting = False
                                     break
@@ -495,43 +505,29 @@ class GameVue(Scene):
             ressource_icon_1, ressource_text_1 = ressource_icons_texts.get(ressource_1, (None, None))
             ressource_icon_2, ressource_text_2 = ressource_icons_texts.get(ressource_2, (None, None))
 
-            self.screen.blit(ressource_text_1, (80 , offset + 50 + 30 * i))
-            self.screen.blit(ressource_text_2, (200, offset + 50 + 30 * i))
+            self.screen.blit(ressource_text_1, (80 * self.scale_factor , offset + (50 + 30 * i) * self.scale_factor))
+            self.screen.blit(ressource_text_2, (200 * self.scale_factor, offset + (50 + 30 * i) * self.scale_factor))
 
-            self.screen.blit(ressource_icon_1, (40 , offset + 43 + 30 * i))
-            self.screen.blit(ressource_icon_2, (160, offset + 43 + 30 * i))
+            self.screen.blit(ressource_icon_1, (40 * self.scale_factor , offset + (43 + 30 * i) * self.scale_factor))
+            self.screen.blit(ressource_icon_2, (160 * self.scale_factor, offset + (43 + 30 * i) * self.scale_factor))
 
             i += 1
 
-        #compass
-            
-        camera_pos = Point(int(self.camera_pos.x), int(self.camera_pos.y))
-        base_pos = Point(0, 0)
-        screen_width, screen_height = self.screen.get_size()
-        compass_center_x = int(screen_width * 0.9)
-        compass_center_y = int(screen_height * 0.2)
-        compass_center = (compass_center_x, compass_center_y)
-        largeur_boussole = int(screen_width * 0.05)
-
-        distance = camera_pos.distance(base_pos) // Map.CELL_SIZE
-        font_size = int(screen_height * 0.05)
-        font = pygame.font.Font("assets/font/Space-Laser-BF65f80ab15c082.otf", font_size)
-        text = font.render(f"Distance: {int(distance)} ", True, (0, 0, 0))
-        text_rect = text.get_rect(center=(compass_center_x, compass_center_y + largeur_boussole + 30))
+        # Boussole
+        int_camera_pos = Point(int(self.camera_pos.x), int(self.camera_pos.y))
+        distance = int_camera_pos.distance(self.base_pos) // Map.CELL_SIZE
+        text = self.ressource_font.render(f"Distance: {int(distance)}", True, (0, 0, 0))
+        text_rect = text.get_rect(center=(self.compass_center.x, self.compass_center.y + self.compass_width + 30))
         self.screen.blit(text, text_rect)
 
-        if camera_pos == base_pos:
-            pygame.draw.circle(self.screen, (0, 0, 0), compass_center, largeur_boussole, 10)
+        if int_camera_pos == self.base_pos:
+            pygame.draw.circle(self.screen, (0, 0, 0), (self.compass_center.x, self.compass_center.y), self.compass_width, 10)
         else:
-            vect_posx = -(camera_pos.x / camera_pos.distance(base_pos)) * largeur_boussole
-            vect_posy = -(camera_pos.y / camera_pos.distance(base_pos)) * largeur_boussole
-            vect_pos = Point(vect_posx, vect_posy)
-            end_posx = vect_posx + compass_center_x
-            end_posy = vect_posy + compass_center_y
-            end_pos = (end_posx, end_posy)
+            vect_pos = Point(-(int_camera_pos.x / int_camera_pos.distance(self.base_pos)) * self.compass_width, -(int_camera_pos.y / int_camera_pos.distance(self.base_pos)) * self.compass_width)
+            end_pos = vect_pos + self.compass_center
 
-            pygame.draw.circle(self.screen, (0, 0, 0), compass_center, largeur_boussole, 10)
-            pygame.draw.line(self.screen, (255, 0, 0), compass_center, end_pos, 4)
+            pygame.draw.circle(self.screen, (0, 0, 0), (self.compass_center.x, self.compass_center.y), self.compass_width, 10)
+            pygame.draw.line(self.screen, (255, 0, 0), (self.compass_center.x, self.compass_center.y), (end_pos.x, end_pos.y), 4)
 
         self.home_button.render(self.screen)
         self.building_button.render(self.screen)
