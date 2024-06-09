@@ -1,5 +1,6 @@
 import os
 import pickle
+import random
 import numpy as np
 
 
@@ -58,7 +59,12 @@ class QLearningAgent:
         if state not in self.states:
             self.add_state(state)
         if np.random.uniform(0, 1) < self.exploration_rate:
-            action = np.random.randint(0, len(self.actions))  # Explore action space
+            choices = self.q_table[self.states.index(state), :].copy()
+            possibilities = list()
+            for choice in range(len(choices)):
+                if choices[choice] >= 0:
+                    possibilities.append(choice)
+            action = possibilities[random.randint(0, len(possibilities) - 1)]
         else:
             action = np.argmax(
                 self.q_table[self.states.index(state), :]
