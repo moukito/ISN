@@ -24,7 +24,7 @@ class Pause(Scene):
         render(): Renders the settings screen.
     """
 
-    def __init__(self, core, parent_render):
+    def __init__(self, core, parent_render, saver):
         """
         Initializes the PauseScene instance with the screen.
 
@@ -33,24 +33,12 @@ class Pause(Scene):
         """
         super().__init__(core)
         self.parent_render = parent_render
+        self.saver = saver
         self.opacity = pygame.Surface(
             (self.screen.get_width(), self.screen.get_height())
         )
         self.opacity.set_alpha(160)
         self.scale = 0.0
-
-        self.volume = pygame.mixer.music.get_volume()
-        self.resolution = (self.screen.get_width(), self.screen.get_height())
-
-        self.volume_slider = Slider(20, 100, 200, 20, 0.0, 1.0, self.volume)
-        self.resolution_menu = Select(
-            20,
-            200,
-            200,
-            50,
-            [(800, 600), (1024, 768), (1920, 1080), (2560, 1440), (3840, 2160)],
-            self.resolution,
-        )
 
         button_width = self.screen.get_width() * 0.156
         button_height = self.screen.get_height() * 0.062
@@ -107,13 +95,10 @@ class Pause(Scene):
         elif self.quitter_button.is_clicked(event):
             pygame.event.post(pygame.event.Event(self.event, {"scene": "quit"}))
             pygame.quit()
-            sys.exit()
-        elif self.save_button.is_clicked(event) :
-            saves_scene = SavesScene(
-                self.core, self.render
-            )  # Create and run the saves scene
-            saves_scene.run()
-        elif self.settings_button.is_clicked(event) :
+            sys.exit(0)
+        elif self.save_button.is_clicked(event):
+            self.saver.save()
+        elif self.settings_button.is_clicked(event):
             settings_scene = SettingsScene(
                 self.core, self.render
             )  # Create and run the settings scene
@@ -124,18 +109,11 @@ class Pause(Scene):
                     self.change_button_color(button, True)
                 else:
                     self.change_button_color(button, False)
-        self.volume_slider.handle_event(event)
-        self.resolution_menu.handle_event(event)
 
     def update(self):
         """
         Updates the pause screen.
         """
-        self.volume = self.volume_slider.get_value()
-        pygame.mixer.music.set_volume(self.volume)
-
-        self.resolution = self.resolution_menu.get_value()
-
         if self.scale < 0.99:
             self.scale += 0.02
     
@@ -167,13 +145,29 @@ class Pause(Scene):
         Renders the pause screen.
         """
         self.parent_render()
-
         self.screen.blit(self.opacity, (0, 0))
 
         self.reprendre_button.render(self.screen)
         self.quitter_button.render(self.screen)
         self.save_button.render(self.screen)
         self.settings_button.render(self.screen)
+
+        scaled_screen = pygame.transform.scale(
+            self.screen,
+            (
+                int(self.screen.get_width() * self.scale),
+                int(self.screen.get_height() * self.scale),
+            ),
+        )  # Scale the screen
+
+        self.parent_render()
+        self.screen.blit(
+            scaled_screen,
+            (
+                (self.screen.get_width() - scaled_screen.get_width()) // 2,
+                (self.screen.get_height() - scaled_screen.get_height()) // 2,
+            ),
+        )  # Draw the scaled screen onto the original screen
 
     @staticmethod
     def change_button_color(button, hovered):

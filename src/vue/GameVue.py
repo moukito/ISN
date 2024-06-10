@@ -92,7 +92,6 @@ class GameVue(Scene):
 
         self.saver = Saver(self, core.save_name)
 
-        # TODO
         if core.save_name is not None:
             self.saver.load()
 
@@ -318,7 +317,7 @@ class GameVue(Scene):
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_p :
                     pause = Pause(
-                        self.core, self.render
+                        self.core, self.render, self.saver
                     )  # Create and run the settings scene
                     pause.run()
                 if event.key == pygame.K_s: # TODO: temporary

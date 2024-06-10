@@ -67,7 +67,7 @@ class SettingsScene(Scene):
         font_size = int(self.screen.get_height() * 0.065)
 
         self.apply_button = Button(
-            "Apply",
+            "Ok",
             self.screen.get_width() * 3 / 4 - button_width / 2,
             self.screen.get_height() * 0.9,
             button_width,
@@ -77,7 +77,7 @@ class SettingsScene(Scene):
             font_size,
         )
         self.cancel_button = Button(
-            "Cancel",
+            "Retour",
             self.screen.get_width() / 4 - button_width / 2,
             self.screen.get_height() * 0.9,
             button_width,
@@ -178,12 +178,12 @@ class SettingsScene(Scene):
             hovered (bool): Whether the button is hovered or not.
         """
         if hovered:
-            if button.text == "Apply":
+            if button.text == "Ok":
                 button.color = (0, 255, 0)
             else:
                 button.color = (255, 0, 0)
         else:
-            if button.text == "Apply":
+            if button.text == "Ok":
                 button.color = (0, 200, 0)
             else:
                 button.color = (200, 0, 0)

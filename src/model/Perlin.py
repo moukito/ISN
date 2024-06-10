@@ -18,6 +18,9 @@ class Perlin:
         self.gradients = []
         self.permutation = []
 
+        self.set_seed(seed)
+
+    def set_seed(self, seed):
         random.seed(seed)
         self.x_offset = random.randrange(-100, 100)
         self.y_offset = random.randrange(-100, 100)

@@ -30,12 +30,16 @@ class GatherState(Enum):
     DEPOSITING = 2
 
 class Human(Entity):
-    __slots__ = ["name", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "damage", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "going_to_deposit", "state", "work", "gather_state", "map", "player", "target_entity", "death_callback"]
+    __slots__ = ["hid", "current_location", "target_location", "building_location", "path", "resource_capacity", "gathering_speed", "damage", "ressource_type", "deposit_speed", "speed", "progression", "going_to_work", "going_to_target", "going_to_deposit", "state", "work", "gather_state", "map", "player", "target_entity", "death_callback"]
 
     CELL_CENTER = Point(Map.CELL_SIZE, Map.CELL_SIZE) // 2
 
+    HID = 0
+
     def __init__(self, health, type, capacity, gathering_speed, damage, speed, map, location, player, death_callback):
         super().__init__(health, {})
+        Human.HID += 1
+        self.hid = Human.HID
         self.type = type
         self.current_location = location - location % Map.CELL_SIZE + Human.CELL_CENTER
         self.target_location = None
@@ -59,6 +63,7 @@ class Human(Entity):
         self.player = player
         self.target_entity = None
         self.death_callback = death_callback
+        self.ressources = {}
 
     def find_nearest_building(self, building_types):
         buildings = []
