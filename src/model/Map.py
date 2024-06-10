@@ -40,7 +40,6 @@ class Map:
         self.ores = {} # {Point (chunk coords): {OreType: [Point]}}
         self.buildings = []
         self.building_type = {} # {StructureType: Structure}
-        self.structures = {} # {Point (chunk coords): [Structure]}
         self.occupied_coords = {} # {Point: Structure}
         self.chunk_humans = {} # {Point (chunk coords): [Humans]}
         self.humans = []
@@ -219,9 +218,6 @@ class Map:
                     self.chunk_occupied_coords[chunk_coords] = []
                 self.chunk_occupied_coords[chunk_coords].append(absolute_point)
 
-            if self.structures.get(center // Perlin.CHUNK_SIZE, None) is None:
-                self.structures[center // Perlin.CHUNK_SIZE] = []
-            self.structures[center // Perlin.CHUNK_SIZE].append(structure)
             if structure.structure_type == StructureType.BUILDING:
                 self.buildings.append(structure)
                 type = structure.type
@@ -269,7 +265,6 @@ class Map:
     def remove_building(self, building):
         self.buildings.remove(building)
         self.building_type[building.type].remove(building)
-        self.structures[building.coords // Perlin.CHUNK_SIZE].remove(building)
         for point in building.points:
             self.occupied_coords.pop(building.coords + point)
             actual_chunk_pos = (building.coords + point) // Perlin.CHUNK_SIZE

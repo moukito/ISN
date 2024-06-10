@@ -22,9 +22,13 @@ class Orientation(Enum):
     WEST = 4
 
 class Structure:
-    __slots__ = ["structure_type", "coords", "points", "orientation"]
+    __slots__ = ["sid", "structure_type", "coords", "points", "orientation"]
+
+    SID = 0
 
     def __init__(self, structure_type, coords, points, orientation = Orientation.RANDOM) -> None:
+        Structure.SID += 1
+        self.sid = Structure.SID
         self.structure_type = structure_type
         self.coords = coords
         self.points = points
@@ -189,7 +193,7 @@ class Building(TypedStructure):
         return need_render
 
 class BaseCamp(Building):
-    def __init__(self, coords, player, destroy_callback, human_death_callback) -> None:
+    def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
         super().__init__(None, 2000, 0, BuildingType.BASE_CAMP, coords, Rectangle(-2, -2, 2, 2).toPointList(), player, destroy_callback, human_death_callback, Orientation.NORTH)
         self.state = BuildingState.BUILT
         self.building_time = self.building_duration
@@ -264,8 +268,6 @@ class Pantry(Building):
             self.player.upgrades.FOOD_MULTIPLIER = 2
 
 class Farm(Building):
-    __slots__ = ["food"]
-    
     def __init__(self, coords, player, destroy_callback, human_death_callback, orientation=Orientation.RANDOM) -> None:
         super().__init__({RessourceType.WOOD: 50}, 300, 1 * 60, BuildingType.FARM, coords, Rectangle(-1, -1, 1, 1).toPointList(), player, destroy_callback, human_death_callback, orientation)
     

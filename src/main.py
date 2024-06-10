@@ -35,6 +35,8 @@ def verify_path():
             os.chdir(path)
     elif SYSTEM == "Windows":
         keyword = path.split("\\")
+        if len(keyword) == 1:
+            keyword = path.split("/")
         path = path[:-(len(keyword[-1]) + len(keyword[-2]) + 2)]
         if path != os.getcwd():
             os.chdir(path)

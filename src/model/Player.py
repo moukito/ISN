@@ -2,9 +2,13 @@ from model.Ressource import RessourceType
 from model.Upgrades import Upgrades
 
 class Player:
-    __slots__ = ["ressources", "ressource_update_callback", "upgrades"]
+    __slots__ = ["pid", "ressources", "ressource_update_callback", "upgrades"]
+
+    PID = 0
 
     def __init__(self, ressource_update_callback) -> None:
+        Player.PID += 1
+        self.pid = Player.PID 
         delta = 0.05 # Add a small delta to remove floating point errors with ressource gathering
         self.ressources = {
             RessourceType.FOOD: 200 + delta,

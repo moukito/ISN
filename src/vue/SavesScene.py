@@ -18,7 +18,7 @@ class SavesScene(Scene):
         self.save_name = None
 
         saves_directory = "saves"
-        saves = []
+        saves = [""]
         if os.path.exists(saves_directory):
             for name in os.listdir(saves_directory):
                 if os.path.isdir(os.path.join(saves_directory, name)):
@@ -40,7 +40,7 @@ class SavesScene(Scene):
         font_size = int(self.screen.get_height() * 0.065)
 
         self.apply_button = Button(
-            "Apply",
+            "Ok",
             self.screen.get_width() * 3 / 4 - button_width / 2,
             self.screen.get_height() * 0.9,
             button_width,
@@ -50,7 +50,7 @@ class SavesScene(Scene):
             font_size,
         )
         self.cancel_button = Button(
-            "Cancel",
+            "Retour",
             self.screen.get_width() / 4 - button_width / 2,
             self.screen.get_height() * 0.9,
             button_width,
@@ -83,7 +83,9 @@ class SavesScene(Scene):
         if self.scale < 0.99:
             self.scale += 0.05
 
-        self.core.save_name = self.save_menu.get_value()
+        save_name = self.save_menu.get_value()
+        if save_name != "":
+            self.core.save_name = save_name
 
     def render(self):
         self.parent_render()
@@ -123,12 +125,12 @@ class SavesScene(Scene):
             hovered (bool): Whether the button is hovered or not.
         """
         if hovered:
-            if button.text == "Apply":
+            if button.text == "Ok":
                 button.color = (0, 255, 0)
             else:
                 button.color = (255, 0, 0)
         else:
-            if button.text == "Apply":
+            if button.text == "Ok":
                 button.color = (0, 200, 0)
             else:
                 button.color = (200, 0, 0)
